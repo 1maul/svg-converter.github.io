@@ -355,7 +355,6 @@
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-hair.png" class="trait-image">
                             <div class="trait-name">Hair</div>
                             <input type="file" class="hidden" accept=".svg">
-                        </dev>
                     </div>
                 </div>
             </div>
@@ -397,8 +396,9 @@
                 face: null,
                 eyes: null,
                 top: null,
-                bottom: null
+                bottom: null,
                 hair: null
+               
             };
 
             // Store preview elements for each part
@@ -406,8 +406,9 @@
                 face: null,
                 eyes: null,
                 top: null,
-                bottom: null
+                bottom: null,
                 hair: null
+                
             };
 
             // Set up file upload for each trait
@@ -507,6 +508,7 @@
                 if (traitSVGs.eyes) {
                     parts.push(processSVG(traitSVGs.eyes, 'yellow'));
                 }
+                
                 if (traitSVGs.hair) {
                     parts.push(processSVG(traitSVGs.hair, 'blue'));
                 }
