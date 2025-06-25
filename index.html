@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Processor for Reddit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>SVG Processor for Reddit</h1>
+        <div class="upload-area" id="dropZone">
+            <input type="file" id="fileInput" accept=".svg">
+            <p>Drag & drop your SVG file here or click to browse</p>
+        </div>
+        <div class="controls">
+            <label for="colorSelect">Choose color:</label>
+            <select id="colorSelect">
+                <option value="lime">Lime</option>
+                <option value="blue">Blue</option>
+                <option value="yellow">Yellow</option>
+            </select>
+            <button id="processBtn">Process SVG</button>
+        </div>
+        <div class="output" id="outputArea">
+            <div class="status" id="statusMessage">Ready to process files</div>
+            <a id="downloadLink" class="hidden" download="processed.svg">Download Processed SVG</a>
+            <div id="previewContainer" class="preview-container hidden"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
