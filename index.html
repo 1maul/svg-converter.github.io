@@ -216,9 +216,17 @@
         }
 
         #snooPreview {
-            width: 380px;
-            height: 600px;
+            width: 200px;
+            height: 200px;
             position: relative;
+        }
+
+        .snoo-part {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .preview-placeholder {
@@ -329,15 +337,14 @@
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-hair.png" class="trait-image">
                             <div class="trait-name">Hair</div>
                             <input type="file" class="hidden" accept=".svg">
-                        </div>
                         <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-tops.png" class="trait-image">
-                            <div class="trait-name">Tops</div>
+                            <div class="trait-name">Top</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                         <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-bottoms.png" class="trait-image">
-                            <div class="trait-name">Bottoms</div>
+                            <div class="trait-name">Bottom</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                     </div>
@@ -346,25 +353,15 @@
 
             <div class="preview-panel">
                 <div class="preview-container">
-                    <div class="preview-placeholder">
+                    <div class="preview-placeholder" id="previewPlaceholder">
                         <p>Your Snoo will appear here</p>
                     </div>
-                    <div id="snooPreview" class="hidden"></div>
+                    <div id="snooPreview" class="hidden">
+                        <!-- Parts will be inserted here -->
+                    </div>
                 </div>
 
                 <div class="processing-section">
-                    <div class="processing-controls">
-                        <select id="colorSelect">
-                            <option value="lime">Lime (Skin)</option>
-                            <option value="blue">Blue (Hair)</option>
-                            <option value="yellow">Yellow (Eyes)</option>
-                        </select>
-                        <button id="processBtn" class="btn btn-primary">
-                            <span id="processText">Process SVG</span>
-                            <span class="spinner hidden" id="spinner"></span>
-                        </button>
-                    </div>
-
                     <div class="status-message hidden" id="statusMessage"></div>
 
                     <div class="output-actions">
@@ -390,9 +387,16 @@
             const traitSVGs = {
                 face: null,
                 eyes: null,
-                hair: null,
-                tops: null,
-                bottoms: null
+                top: null,
+                bottom: null
+            };
+
+            // Store preview elements for each part
+            const previewParts = {
+                face: null,
+                eyes: null,
+                top: null,
+                bottom: null
             };
 
             // Set up file upload for each trait
@@ -417,7 +421,7 @@
                     reader.onload = function(e) {
                         traitSVGs[traitName] = e.target.result;
                         card.classList.add('selected');
-                        updatePreview();
+                        updatePreview(traitName, e.target.result);
                     };
                     reader.readAsText(file);
                 });
@@ -446,11 +450,6 @@
                     downloadLink.href = url;
                     downloadLink.classList.remove('hidden');
                     
-                    // Update preview
-                    snooPreview.innerHTML = combinedSVG;
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
-                    
                     showStatus('Snoo avatar created successfully!', 'success');
                 } catch (error) {
                     console.error('Processing error:', error);
@@ -461,32 +460,57 @@
                 }
             });
 
+            // Update preview with specific part
+            function updatePreview(traitName, svgContent) {
+                previewPlaceholder.classList.add('hidden');
+                snooPreview.classList.remove('hidden');
+                
+                // Remove existing part if it exists
+                if (previewParts[traitName]) {
+                    snooPreview.removeChild(previewParts[traitName]);
+                }
+                
+                // Create new preview element
+                const partDiv = document.createElement('div');
+                partDiv.className = `snoo-part snoo-${traitName}`;
+                partDiv.innerHTML = processSVG(svgContent, getColorForTrait(traitName));
+                
+                // Add to preview and store reference
+                snooPreview.appendChild(partDiv);
+                previewParts[traitName] = partDiv;
+            }
+
             // Combine all uploaded SVGs and apply processing with predefined colors
             function combineAndProcessSVGs() {
-                // Filter out null traits and process each with its color
                 const parts = [];
                 
+                // Process each part in correct z-order
+                if (traitSVGs.bottom) {
+                    parts.push(processSVG(traitSVGs.bottom, 'lime'));
+                }
+                if (traitSVGs.top) {
+                    parts.push(processSVG(traitSVGs.top, 'lime'));
+                }
                 if (traitSVGs.face) {
                     parts.push(processSVG(traitSVGs.face, 'lime'));
                 }
                 if (traitSVGs.eyes) {
                     parts.push(processSVG(traitSVGs.eyes, 'yellow'));
                 }
-                if (traitSVGs.hair) {
-                    parts.push(processSVG(traitSVGs.hair, 'blue'));
-                }
-                if (traitSVGs.tops) {
-                    parts.push(processSVG(traitSVGs.tops, 'lime'));
-                }
-                if (traitSVGs.bottoms) {
-                    parts.push(processSVG(traitSVGs.bottoms, 'lime'));
-                }
                 
                 // Create combined SVG
                 return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   ${parts.map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, '')).join('\n')}
 </svg>`;
+            }
+
+            // Get color for specific trait
+            function getColorForTrait(traitName) {
+                switch(traitName) {
+                    case 'eyes': return 'yellow';
+                    default: return 'lime';
+                }
             }
 
             // Process SVG with specific color
@@ -495,28 +519,10 @@
                 const cleaned = content
                     .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
                 
-                // Add color class
-                return cleaned.replace(/<path/g, `<path fill="${color}"`);
-            }
-
-            // Update preview with current traits
-            function updatePreview() {
-                const hasSVGs = Object.values(traitSVGs).some(svg => svg !== null);
-                if (hasSVGs) {
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
-                    
-                    // Create a simple preview
-                    const previewContent = Object.values(traitSVGs)
-                        .filter(svg => svg !== null)
-                        .map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, ''))
-                        .join('\n');
-                    
-                    snooPreview.innerHTML = previewContent;
-                } else {
-                    previewPlaceholder.classList.remove('hidden');
-                    snooPreview.classList.add('hidden');
-                }
+                // Add color class and proper sizing
+                return cleaned
+                    .replace(/<svg([^>]*)>/, '<svg$1 width="200" height="200" viewBox="0 0 200 200">')
+                    .replace(/<path/g, `<path fill="${color}"`);
             }
 
             function showStatus(message, type) {
