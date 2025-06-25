@@ -353,6 +353,18 @@
                 </div>
 
                 <div class="processing-section">
+                    <div class="processing-controls">
+                        <select id="colorSelect">
+                            <option value="lime">Lime (Skin)</option>
+                            <option value="blue">Blue (Hair)</option>
+                            <option value="yellow">Yellow (Eyes)</option>
+                        </select>
+                        <button id="processBtn" class="btn btn-primary">
+                            <span id="processText">Process SVG</span>
+                            <span class="spinner hidden" id="spinner"></span>
+                        </button>
+                    </div>
+
                     <div class="status-message hidden" id="statusMessage"></div>
 
                     <div class="output-actions">
