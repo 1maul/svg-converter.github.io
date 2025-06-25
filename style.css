@@ -1,0 +1,8 @@
+.preview-container {
+    width: 200px; /* Adjust as needed */
+    height: 315px; /* Adjust as needed */
+}
+
+#snooPreview svg {
+    width: 100%;
+    height: 100%;
