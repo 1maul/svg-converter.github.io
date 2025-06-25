@@ -232,28 +232,6 @@
             border-top: 1px solid var(--gray-200);
         }
 
-        .processing-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        select {
-            padding: 0.75rem;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--gray-300);
-            font-family: inherit;
-            background-color: white;
-            flex-grow: 1;
-            transition: var(--transition);
-        }
-
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.2);
-        }
-
         .output-actions {
             display: flex;
             gap: 1rem;
@@ -328,7 +306,7 @@
             <h1 class="header-title">Reddit Snoo Creator</h1>
             <div class="header-actions">
                 <button class="btn btn-outline">Edit</button>
-                <button class="btn btn-primary">Create</button>
+                <button id="createBtn" class="btn btn-primary">Create</button>
             </div>
         </header>
 
@@ -362,11 +340,6 @@
                             <div class="trait-name">Bottoms</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
-                        <div class="trait-card">
-                            <img src="https://via.placeholder.com/100x100?text=Accessory" class="trait-image">
-                            <div class="trait-name">Accessory</div>
-                            <input type="file" class="hidden" accept=".svg">
-                        </div>
                     </div>
                 </div>
             </div>
@@ -380,18 +353,6 @@
                 </div>
 
                 <div class="processing-section">
-                    <div class="processing-controls">
-                        <select id="colorSelect">
-                            <option value="lime">Lime (Skin)</option>
-                            <option value="blue">Blue (Hair)</option>
-                            <option value="yellow">Yellow (Eyes)</option>
-                        </select>
-                        <button id="processBtn" class="btn btn-primary">
-                            <span id="processText">Process SVG</span>
-                            <span class="spinner hidden" id="spinner"></span>
-                        </button>
-                    </div>
-
                     <div class="status-message hidden" id="statusMessage"></div>
 
                     <div class="output-actions">
@@ -407,10 +368,7 @@
             // DOM Elements
             const traitCards = document.querySelectorAll('.trait-card');
             const fileInputs = document.querySelectorAll('.trait-card input[type="file"]');
-            const colorSelect = document.getElementById('colorSelect');
-            const processBtn = document.getElementById('processBtn');
-            const processText = document.getElementById('processText');
-            const spinner = document.getElementById('spinner');
+            const createBtn = document.getElementById('createBtn');
             const statusMessage = document.getElementById('statusMessage');
             const downloadLink = document.getElementById('downloadLink');
             const snooPreview = document.getElementById('snooPreview');
@@ -422,16 +380,8 @@
                 eyes: null,
                 hair: null,
                 tops: null,
-                bottoms: null,
-                accessory: null
+                bottoms: null
             };
-
-            // Status messages like the Discord bot
-            const STATUS_MESSAGES = [
-                "Starting SVG processing...",
-                "Applying color transformation...",
-                "Finalizing Snoo avatar..."
-            ];
 
             // Set up file upload for each trait
             traitCards.forEach((card, index) => {
@@ -461,8 +411,8 @@
                 });
             });
 
-            // Process button click handler
-            processBtn.addEventListener('click', async () => {
+            // Create button click handler
+            createBtn.addEventListener('click', async () => {
                 // Check if we have at least one SVG
                 const hasSVGs = Object.values(traitSVGs).some(svg => svg !== null);
                 if (!hasSVGs) {
@@ -471,28 +421,17 @@
                 }
                 
                 // UI state changes
-                processBtn.disabled = true;
-                processText.textContent = 'Processing...';
-                spinner.classList.remove('hidden');
-                downloadLink.classList.add('hidden');
+                createBtn.disabled = true;
+                createBtn.innerHTML = '<span class="spinner"></span> Creating...';
                 
                 try {
-                    // Step 1: Processing
-                    showStatus(STATUS_MESSAGES[0], 'info');
-                    
-                    // Step 2: Combine SVGs with color
-                    showStatus(STATUS_MESSAGES[1], 'info');
-                    const color = colorSelect.value;
-                    const combinedSVG = combineAndProcessSVGs(color);
-                    
-                    // Step 3: Finalizing
-                    showStatus(STATUS_MESSAGES[2], 'info');
+                    // Combine SVGs with predefined colors
+                    const combinedSVG = combineAndProcessSVGs();
                     
                     // Create download link
                     const blob = new Blob([combinedSVG], { type: 'image/svg+xml' });
                     const url = URL.createObjectURL(blob);
                     downloadLink.href = url;
-                    downloadLink.download = `snoo_${color}_avatar.svg`;
                     downloadLink.classList.remove('hidden');
                     
                     // Update preview
@@ -505,38 +444,47 @@
                     console.error('Processing error:', error);
                     showStatus(`Error: ${error.message}`, 'error');
                 } finally {
-                    processBtn.disabled = false;
-                    processText.textContent = 'Process SVG';
-                    spinner.classList.add('hidden');
+                    createBtn.disabled = false;
+                    createBtn.textContent = 'Create';
                 }
             });
 
-            // Combine all uploaded SVGs and apply processing
-            function combineAndProcessSVGs(color) {
-                // Filter out null traits
-                const activeTraits = Object.entries(traitSVGs)
-                    .filter(([_, svg]) => svg !== null)
-                    .map(([trait, svg]) => ({
-                        trait,
-                        content: optimizeSVG(svg, color)
-                    }));
+            // Combine all uploaded SVGs and apply processing with predefined colors
+            function combineAndProcessSVGs() {
+                // Filter out null traits and process each with its color
+                const parts = [];
+                
+                if (traitSVGs.face) {
+                    parts.push(processSVG(traitSVGs.face, 'lime'));
+                }
+                if (traitSVGs.eyes) {
+                    parts.push(processSVG(traitSVGs.eyes, 'yellow'));
+                }
+                if (traitSVGs.hair) {
+                    parts.push(processSVG(traitSVGs.hair, 'blue'));
+                }
+                if (traitSVGs.tops) {
+                    parts.push(processSVG(traitSVGs.tops, 'lime'));
+                }
+                if (traitSVGs.bottoms) {
+                    parts.push(processSVG(traitSVGs.bottoms, 'lime'));
+                }
                 
                 // Create combined SVG
                 return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
-  <defs>
-    <style>.cls-1 { fill: ${color}; }</style>
-  </defs>
-  ${activeTraits.map(t => t.content.replace(/<svg[\s\S]*?>|<\/svg>/g, '')).join('\n')}
+  ${parts.map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, '')).join('\n')}
 </svg>`;
             }
 
-            // Same optimization as your Discord bot
-            function optimizeSVG(content, color) {
+            // Process SVG with specific color
+            function processSVG(content, color) {
+                // Clean SVG
                 const cleaned = content
                     .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
                 
-                return cleaned.replace(/<path/g, '<path class="cls-1"');
+                // Add color class
+                return cleaned.replace(/<path/g, `<path fill="${color}"`);
             }
 
             // Update preview with current traits
@@ -546,7 +494,7 @@
                     previewPlaceholder.classList.add('hidden');
                     snooPreview.classList.remove('hidden');
                     
-                    // Create a simple preview (in a real app you'd properly layer them)
+                    // Create a simple preview
                     const previewContent = Object.values(traitSVGs)
                         .filter(svg => svg !== null)
                         .map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, ''))
