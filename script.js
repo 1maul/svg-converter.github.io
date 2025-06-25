@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
     const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
     const colorSelect = document.getElementById('colorSelect');
@@ -6,98 +7,165 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('statusMessage');
     const downloadLink = document.getElementById('downloadLink');
     const previewContainer = document.getElementById('previewContainer');
+    const progressBar = document.getElementById('progressBar');
     
     let currentFile = null;
+    const colorMap = {
+        lime: '#4cc9f0',
+        blue: '#4361ee',
+        yellow: '#ffd166',
+        red: '#ef476f',
+        purple: '#7209b7'
+    };
 
-    // Handle file selection
+    // Event Listeners
     fileInput.addEventListener('change', handleFileSelect);
+    processBtn.addEventListener('click', processSVG);
     
-    // Drag and drop functionality
+    // Drag and drop functionality with enhanced UI feedback
     dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over', 'pulse');
+        });
     });
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('drag-over');
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over', 'pulse');
+        });
     });
+    
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
         if (e.dataTransfer.files.length) {
             fileInput.files = e.dataTransfer.files;
             handleFileSelect({ target: fileInput });
         }
     });
 
-    // Process button click
-    processBtn.addEventListener('click', processSVG);
-
+    // File selection handler
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
         
-        if (!file.name.endsWith('.svg')) {
-            statusMessage.textContent = '❌ Please select a valid SVG file';
+        // Reset previous state
+        resetProcessingState();
+        
+        // Validate file type
+        if (!file.name.endsWith('.svg') && !file.type.includes('svg')) {
+            showStatus('❌ Please select a valid SVG file', 'error');
             return;
         }
         
         currentFile = file;
-        statusMessage.textContent = `📄 ${file.name} ready for processing`;
+        showStatus(`📄 ${file.name} ready for processing`, 'success');
         processBtn.disabled = false;
+        
+        // Show upload progress animation
+        simulateUploadProgress();
     }
 
+    // Main processing function
     async function processSVG() {
-        if (!currentFile) return;
+        if (!currentFile) {
+            showStatus('❌ No file selected', 'error');
+            return;
+        }
         
+        // UI state changes
         processBtn.disabled = true;
-        statusMessage.textContent = "⚡ Processing SVG...";
+        showStatus("⚡ Processing SVG...", 'processing');
+        downloadLink.classList.add('hidden');
+        previewContainer.classList.add('hidden');
         
         try {
-            const color = colorSelect.value;
-            const fileContent = await readFile(currentFile);
+            // Read file with progress simulation
+            const fileContent = await readFileWithProgress(currentFile);
             
-            statusMessage.textContent = "🎨 Applying color...";
-            
-            // Process the SVG (same logic as Discord bot)
-            const processedSVG = cleanSVG(fileContent, color);
+            // Process the SVG
+            showStatus("🎨 Applying color transformation...", 'processing');
+            const processedSVG = await transformSVG(fileContent, colorSelect.value);
             
             // Create download link
-            const blob = new Blob([processedSVG], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            
-            downloadLink.href = url;
-            downloadLink.download = `reddit_${currentFile.name}`;
-            downloadLink.classList.remove('hidden');
+            createDownloadLink(processedSVG);
             
             // Show preview
-            previewContainer.innerHTML = processedSVG;
-            previewContainer.classList.remove('hidden');
+            showPreview(processedSVG);
             
-            statusMessage.textContent = "✅ Processing complete!";
+            showStatus("✅ Processing complete! Click to download", 'success');
         } catch (error) {
-            console.error(error);
-            statusMessage.textContent = `❌ Error: ${error.message}`;
+            console.error('Processing error:', error);
+            showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
             processBtn.disabled = false;
         }
     }
 
-    function readFile(file) {
+    // Helper functions
+    function resetProcessingState() {
+        currentFile = null;
+        processBtn.disabled = true;
+        progressBar.style.width = '0%';
+    }
+
+    function showStatus(message, type = 'info') {
+        statusMessage.textContent = message;
+        statusMessage.style.color = type === 'error' ? 'var(--warning)' : 
+                                  type === 'success' ? 'var(--success)' : '';
+    }
+
+    function simulateUploadProgress() {
+        let width = 0;
+        const interval = setInterval(() => {
+            if (width >= 100) {
+                clearInterval(interval);
+            } else {
+                width += 10;
+                progressBar.style.width = `${width}%`;
+            }
+        }, 100);
+    }
+
+    function readFileWithProgress(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(new Error('Failed to read file'));
+            
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = `${percent}%`;
+                }
+            };
+            
+            reader.onload = (e) => {
+                progressBar.style.width = '100%';
+                setTimeout(() => progressBar.style.width = '0%', 500);
+                resolve(e.target.result);
+            };
+            
+            reader.onerror = () => {
+                reject(new Error('Failed to read file'));
+            };
+            
             reader.readAsText(file);
         });
     }
 
-    function cleanSVG(content, color) {
-        // Same processing logic as your Discord bot
-        const cleaned = content
-            .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
-        
-        return `<?xml version="1.0" encoding="UTF-8"?>
+    function transformSVG(content, colorKey) {
+        return new Promise((resolve) => {
+            // Simulate processing delay for animation
+            setTimeout(() => {
+                const color = colorMap[colorKey] || '#4361ee';
+                
+                // 1. Remove unwanted elements and attributes
+                const cleaned = content
+                    .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
+                
+                // 2. Apply color transformation
+                const processed = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
   <defs>
     <style>.cls-1 { fill: ${color}; }</style>
@@ -107,5 +175,37 @@ document.addEventListener('DOMContentLoaded', () => {
     .replace(/<path/g, '<path class="cls-1"')
   }
 </svg>`;
+                
+                resolve(processed);
+            }, 800); // Simulated processing delay
+        });
+    }
+
+    function createDownloadLink(svgContent) {
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        
+        downloadLink.href = url;
+        downloadLink.download = `reddit_${currentFile.name.replace('.svg', '')}_${colorSelect.value}.svg`;
+        downloadLink.classList.remove('hidden');
+    }
+
+    function showPreview(svgContent) {
+        previewContainer.innerHTML = svgContent;
+        previewContainer.classList.remove('hidden');
+        previewContainer.classList.add('fade-in');
+        
+        // Scale down large SVGs for preview
+        const svg = previewContainer.querySelector('svg');
+        if (svg) {
+            const viewBox = svg.getAttribute('viewBox');
+            if (viewBox) {
+                const [,, width, height] = viewBox.split(' ').map(Number);
+                if (width > 500 || height > 500) {
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
+                }
+            }
+        }
     }
 });
