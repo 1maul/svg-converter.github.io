@@ -212,18 +212,34 @@
             background-color: var(--gray-100);
             border-radius: var(--border-radius);
             position: relative;
-            min-height: 400px;
+            min-height: 600px;
         }
 
         #snooPreview {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 380px;
+            height: 600px;
+            position: relative;
+            background-image: url('https://www.redditstatic.com/marketplace-assets/v1/creatordefaultbackground.png viewBox="0 0 380 600"><rect width="380" height="600" fill="%23F6F7F8"/><path d="M190 120c-38.5 0-70 31.5-70 70v40h140v-40c0-38.5-31.5-70-70-70z" fill="%23FF4500"/><path d="M190 120c38.5 0 70 31.5 70 70v40h-140v-40c0-38.5 31.5-70 70-70z" fill="%23FF4500" fill-opacity="0.2"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .snoo-part {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .preview-placeholder {
             text-align: center;
             color: var(--gray-500);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .processing-section {
@@ -326,18 +342,13 @@
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                         <div class="trait-card">
-                            <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-hair.png" class="trait-image">
-                            <div class="trait-name">Hair</div>
-                            <input type="file" class="hidden" accept=".svg">
-                        </div>
-                        <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-tops.png" class="trait-image">
-                            <div class="trait-name">Tops</div>
+                            <div class="trait-name">Top</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                         <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-bottoms.png" class="trait-image">
-                            <div class="trait-name">Bottoms</div>
+                            <div class="trait-name">Bottom</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                     </div>
@@ -346,10 +357,12 @@
 
             <div class="preview-panel">
                 <div class="preview-container">
-                    <div class="preview-placeholder">
-                        <p>Your Snoo will appear here</p>
+                    <div id="snooPreview">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            <p>Your Snoo will appear here</p>
+                        </div>
+                        <!-- Parts will be inserted here -->
                     </div>
-                    <div id="snooPreview" class="hidden"></div>
                 </div>
 
                 <div class="processing-section">
@@ -378,9 +391,16 @@
             const traitSVGs = {
                 face: null,
                 eyes: null,
-                hair: null,
-                tops: null,
-                bottoms: null
+                top: null,
+                bottom: null
+            };
+
+            // Store preview elements for each part
+            const previewParts = {
+                face: null,
+                eyes: null,
+                top: null,
+                bottom: null
             };
 
             // Set up file upload for each trait
@@ -405,7 +425,7 @@
                     reader.onload = function(e) {
                         traitSVGs[traitName] = e.target.result;
                         card.classList.add('selected');
-                        updatePreview();
+                        updatePreview(traitName, e.target.result);
                     };
                     reader.readAsText(file);
                 });
@@ -434,11 +454,6 @@
                     downloadLink.href = url;
                     downloadLink.classList.remove('hidden');
                     
-                    // Update preview
-                    snooPreview.innerHTML = combinedSVG;
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
-                    
                     showStatus('Snoo avatar created successfully!', 'success');
                 } catch (error) {
                     console.error('Processing error:', error);
@@ -449,62 +464,80 @@
                 }
             });
 
+            // Update preview with specific part
+            function updatePreview(traitName, svgContent) {
+                previewPlaceholder.classList.add('hidden');
+                
+                // Remove existing part if it exists
+                if (previewParts[traitName]) {
+                    snooPreview.removeChild(previewParts[traitName]);
+                }
+                
+                // Create new preview element
+                const partDiv = document.createElement('div');
+                partDiv.className = `snoo-part snoo-${traitName}`;
+                partDiv.innerHTML = processSVGForPreview(svgContent, getColorForTrait(traitName));
+                
+                // Add to preview and store reference
+                snooPreview.appendChild(partDiv);
+                previewParts[traitName] = partDiv;
+            }
+
             // Combine all uploaded SVGs and apply processing with predefined colors
             function combineAndProcessSVGs() {
-                // Filter out null traits and process each with its color
                 const parts = [];
                 
+                // Process each part in correct z-order
+                if (traitSVGs.bottom) {
+                    parts.push(processSVG(traitSVGs.bottom, 'lime'));
+                }
+                if (traitSVGs.top) {
+                    parts.push(processSVG(traitSVGs.top, 'lime'));
+                }
                 if (traitSVGs.face) {
                     parts.push(processSVG(traitSVGs.face, 'lime'));
                 }
                 if (traitSVGs.eyes) {
                     parts.push(processSVG(traitSVGs.eyes, 'yellow'));
                 }
-                if (traitSVGs.hair) {
-                    parts.push(processSVG(traitSVGs.hair, 'blue'));
-                }
-                if (traitSVGs.tops) {
-                    parts.push(processSVG(traitSVGs.tops, 'lime'));
-                }
-                if (traitSVGs.bottoms) {
-                    parts.push(processSVG(traitSVGs.bottoms, 'lime'));
-                }
                 
-                // Create combined SVG
+                // Create combined SVG with background
                 return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
+  <rect width="380" height="600" fill="#F6F7F8"/>
+  <path d="M190 120c-38.5 0-70 31.5-70 70v40h140v-40c0-38.5-31.5-70-70-70z" fill="#FF4500"/>
+  <path d="M190 120c38.5 0 70 31.5 70 70v40h-140v-40c0-38.5 31.5-70 70-70z" fill="#FF4500" fill-opacity="0.2"/>
   ${parts.map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, '')).join('\n')}
 </svg>`;
             }
 
-            // Process SVG with specific color
+            // Get color for specific trait
+            function getColorForTrait(traitName) {
+                switch(traitName) {
+                    case 'eyes': return 'yellow';
+                    default: return 'lime';
+                }
+            }
+
+            // Process SVG for preview display
+            function processSVGForPreview(content, color) {
+                // Clean SVG and add color
+                const cleaned = content
+                    .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '')
+                    .replace(/<path/g, `<path fill="${color}"`);
+                
+                // Ensure proper sizing for preview
+                return cleaned.replace(/<svg([^>]*)>/, '<svg$1 width="380" height="600" viewBox="0 0 380 600">');
+            }
+
+            // Process SVG for final output
             function processSVG(content, color) {
                 // Clean SVG
                 const cleaned = content
                     .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
                 
-                // Add color class
+                // Add color attribute
                 return cleaned.replace(/<path/g, `<path fill="${color}"`);
-            }
-
-            // Update preview with current traits
-            function updatePreview() {
-                const hasSVGs = Object.values(traitSVGs).some(svg => svg !== null);
-                if (hasSVGs) {
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
-                    
-                    // Create a simple preview
-                    const previewContent = Object.values(traitSVGs)
-                        .filter(svg => svg !== null)
-                        .map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, ''))
-                        .join('\n');
-                    
-                    snooPreview.innerHTML = previewContent;
-                } else {
-                    previewPlaceholder.classList.remove('hidden');
-                    snooPreview.classList.add('hidden');
-                }
             }
 
             function showStatus(message, type) {
