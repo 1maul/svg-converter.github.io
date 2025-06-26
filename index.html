@@ -11,11 +11,30 @@
             --primary-light: #FF8E62;
             --primary-dark: #D03800;
             --secondary: #24A0ED;
-            --dark: #1A1A1B;
-            --light: #FFFFFF;
-            --gray-100: #F6F7F8;
-            --gray-200: #EAEDEF;
-            --gray-300: #D7DADC;
+            
+            /* Light mode colors */
+            --bg-color: #FFFFFF;
+            --text-color: #1A1A1B;
+            --panel-bg: #F6F7F8;
+            --border-color: #D7DADC;
+            --card-bg: #FFFFFF;
+            --preview-bg: #F6F7F8;
+            
+            /* Dark mode colors */
+            --bg-color-dark: #1A1A1B;
+            --text-color-dark: #FFFFFF;
+            --panel-bg-dark: #272729;
+            --border-color-dark: #343536;
+            --card-bg-dark: #272729;
+            --preview-bg-dark: #1A1A1B;
+            
+            --current-bg: var(--bg-color);
+            --current-text: var(--text-color);
+            --current-panel: var(--panel-bg);
+            --current-border: var(--border-color);
+            --current-card: var(--card-bg);
+            --current-preview: var(--preview-bg);
+            
             --gray-500: #878A8C;
             --gray-700: #4F4F4F;
             --danger: #FF585B;
@@ -26,6 +45,16 @@
             --transition: all 0.2s ease;
         }
 
+        /* Dark mode class */
+        .dark-mode {
+            --current-bg: var(--bg-color-dark);
+            --current-text: var(--text-color-dark);
+            --current-panel: var(--panel-bg-dark);
+            --current-border: var(--border-color-dark);
+            --current-card: var(--card-bg-dark);
+            --current-preview: var(--preview-bg-dark);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -34,9 +63,10 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--gray-100);
-            color: var(--dark);
+            background-color: var(--current-bg);
+            color: var(--current-text);
             line-height: 1.5;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
@@ -51,18 +81,34 @@
             align-items: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid var(--current-border);
         }
 
         .header-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--dark);
+            color: var(--current-text);
         }
 
         .header-actions {
             display: flex;
             gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--current-text);
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--current-panel);
         }
 
         .btn {
@@ -84,20 +130,20 @@
         }
 
         .btn-outline {
-            background-color: white;
-            border-color: var(--gray-300);
-            color: var(--dark);
+            background-color: var(--current-card);
+            border-color: var(--current-border);
+            color: var(--current-text);
         }
 
         .btn-outline:hover {
-            background-color: var(--gray-100);
+            background-color: var(--current-panel);
         }
 
         .creator-container {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 1fr 300px; /* Reversed columns */
             gap: 2rem;
-            background-color: white;
+            background-color: var(--current-card);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-sm);
             padding: 1.5rem;
@@ -107,6 +153,11 @@
             .creator-container {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* Preview panel now comes first in DOM but appears on left visually */
+        .preview-panel {
+            order: -1; /* Move preview to left */
         }
 
         .traits-panel {
@@ -122,7 +173,7 @@
         .trait-title {
             font-weight: 600;
             margin-bottom: 0.75rem;
-            color: var(--dark);
+            color: var(--current-text);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -135,7 +186,7 @@
         }
 
         .trait-card {
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--current-border);
             border-radius: var(--border-radius);
             padding: 0.75rem;
             text-align: center;
@@ -144,6 +195,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            background-color: var(--current-card);
         }
 
         .trait-card:hover {
@@ -161,13 +213,13 @@
             height: 60px;
             object-fit: contain;
             margin-bottom: 0.5rem;
-            background-color: var(--gray-100);
+            background-color: var(--current-panel);
             border-radius: 4px;
         }
 
         .trait-name {
             font-size: 0.875rem;
-            color: var(--gray-700);
+            color: var(--current-text);
         }
 
         .upload-btn {
@@ -177,10 +229,11 @@
             justify-content: center;
             height: 100%;
             padding: 1rem;
-            border: 2px dashed var(--gray-300);
+            border: 2px dashed var(--current-border);
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: var(--transition);
+            background-color: var(--current-card);
         }
 
         .upload-btn:hover {
@@ -209,27 +262,48 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: var(--gray-100);
+            background-color: var(--current-preview);
             border-radius: var(--border-radius);
             position: relative;
-            min-height: 400px;
+            min-height: 600px;
+            border: 1px solid var(--current-border);
         }
 
         #snooPreview {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 380px;
+            height: 600px;
+            position: relative;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600"><rect width="380" height="600" fill="%23F6F7F8"/><path d="M190 120c-38.5 0-70 31.5-70 70v40h140v-40c0-38.5-31.5-70-70-70z" fill="%23FF4500"/><path d="M190 120c38.5 0 70 31.5 70 70v40h-140v-40c0-38.5 31.5-70 70-70z" fill="%23FF4500" fill-opacity="0.2"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .dark-mode #snooPreview {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600"><rect width="380" height="600" fill="%231A1A1B"/><path d="M190 120c-38.5 0-70 31.5-70 70v40h140v-40c0-38.5-31.5-70-70-70z" fill="%23FF4500"/><path d="M190 120c38.5 0 70 31.5 70 70v40h-140v-40c0-38.5 31.5-70 70-70z" fill="%23FF4500" fill-opacity="0.2"/></svg>');
+        }
+
+        .snoo-part {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .preview-placeholder {
             text-align: center;
             color: var(--gray-500);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .processing-section {
             margin-top: 1.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid var(--gray-200);
+            border-top: 1px solid var(--current-border);
         }
 
         .output-actions {
@@ -265,16 +339,17 @@
             border-radius: var(--border-radius);
             margin-top: 1rem;
             font-size: 0.875rem;
+            background-color: var(--current-panel);
         }
 
         .status-success {
-            background-color: #E8F5E9;
             color: #2E7D32;
+            border-left: 4px solid #2E7D32;
         }
 
         .status-error {
-            background-color: #FFEBEE;
             color: var(--danger);
+            border-left: 4px solid var(--danger);
         }
 
         .spinner {
@@ -305,12 +380,32 @@
         <header>
             <h1 class="header-title">Reddit Snoo Creator</h1>
             <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle">🌓</button>
                 <button class="btn btn-outline">Edit</button>
                 <button id="createBtn" class="btn btn-primary">Create</button>
             </div>
         </header>
 
         <div class="creator-container">
+            <div class="preview-panel">
+                <div class="preview-container">
+                    <div id="snooPreview">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            <p>Your Snoo will appear here</p>
+                        </div>
+                        <!-- Parts will be inserted here -->
+                    </div>
+                </div>
+
+                <div class="processing-section">
+                    <div class="status-message hidden" id="statusMessage"></div>
+
+                    <div class="output-actions">
+                        <a id="downloadLink" class="hidden" download="snoo_avatar.svg">Download Snoo SVG</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="traits-panel">
                 <div class="trait-category">
                     <h3 class="trait-title">Snoo Parts</h3>
@@ -326,37 +421,20 @@
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                         <div class="trait-card">
-                            <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-hair.png" class="trait-image">
-                            <div class="trait-name">Hair</div>
-                            <input type="file" class="hidden" accept=".svg">
-                        </div>
-                        <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-tops.png" class="trait-image">
-                            <div class="trait-name">Tops</div>
+                            <div class="trait-name">Top</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
                         <div class="trait-card">
                             <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-bottoms.png" class="trait-image">
-                            <div class="trait-name">Bottoms</div>
+                            <div class="trait-name">Bottom</div>
                             <input type="file" class="hidden" accept=".svg">
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="preview-panel">
-                <div class="preview-container">
-                    <div class="preview-placeholder">
-                        <p>Your Snoo will appear here</p>
-                    </div>
-                    <div id="snooPreview" class="hidden"></div>
-                </div>
-
-                <div class="processing-section">
-                    <div class="status-message hidden" id="statusMessage"></div>
-
-                    <div class="output-actions">
-                        <a id="downloadLink" class="hidden" download="snoo_avatar.svg">Download Snoo SVG</a>
+                        <div class="trait-card">
+                            <img src="https://www.redditstatic.com/shreddit/assets/marketplace/create-avatar/section-hair.png" class="trait-image">
+                            <div class="trait-name">Hair</div>
+                            <input type="file" class="hidden" accept=".svg">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -369,6 +447,7 @@
             const traitCards = document.querySelectorAll('.trait-card');
             const fileInputs = document.querySelectorAll('.trait-card input[type="file"]');
             const createBtn = document.getElementById('createBtn');
+            const themeToggle = document.getElementById('themeToggle');
             const statusMessage = document.getElementById('statusMessage');
             const downloadLink = document.getElementById('downloadLink');
             const snooPreview = document.getElementById('snooPreview');
@@ -378,10 +457,35 @@
             const traitSVGs = {
                 face: null,
                 eyes: null,
-                hair: null,
-                tops: null,
-                bottoms: null
+                top: null,
+                bottom: null,
+                hair: null
             };
+
+            // Store preview elements for each part
+            const previewParts = {
+                face: null,
+                eyes: null,
+                top: null,
+                bottom: null,
+                hair: null
+            };
+
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                themeToggle.textContent = isDark ? '☀️' : '🌙';
+            });
+
+            // Check for saved theme preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            } else {
+                themeToggle.textContent = '🌙';
+            }
 
             // Set up file upload for each trait
             traitCards.forEach((card, index) => {
@@ -405,7 +509,7 @@
                     reader.onload = function(e) {
                         traitSVGs[traitName] = e.target.result;
                         card.classList.add('selected');
-                        updatePreview();
+                        updatePreview(traitName, e.target.result);
                     };
                     reader.readAsText(file);
                 });
@@ -434,11 +538,6 @@
                     downloadLink.href = url;
                     downloadLink.classList.remove('hidden');
                     
-                    // Update preview
-                    snooPreview.innerHTML = combinedSVG;
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
-                    
                     showStatus('Snoo avatar created successfully!', 'success');
                 } catch (error) {
                     console.error('Processing error:', error);
@@ -449,62 +548,106 @@
                 }
             });
 
+            // Update preview with specific part
+            function updatePreview(traitName, svgContent) {
+                previewPlaceholder.classList.add('hidden');
+                
+                // Remove existing part if it exists
+                if (previewParts[traitName]) {
+                    snooPreview.removeChild(previewParts[traitName]);
+                }
+                
+                // Create new preview element
+                const partDiv = document.createElement('div');
+                partDiv.className = `snoo-part snoo-${traitName}`;
+                partDiv.innerHTML = processSVGForPreview(svgContent, getColorForTrait(traitName));
+                
+                // Add to preview and store reference
+                snooPreview.appendChild(partDiv);
+                previewParts[traitName] = partDiv;
+            }
+
             // Combine all uploaded SVGs and apply processing with predefined colors
             function combineAndProcessSVGs() {
-                // Filter out null traits and process each with its color
                 const parts = [];
                 
-                if (traitSVGs.face) {
-                    parts.push(processSVG(traitSVGs.face, 'lime'));
+                // Process each part in correct z-order
+                if (traitSVGs.bottom) {
+                    parts.push(processSVG(traitSVGs.bottom, 'lime', 'bottom'));
                 }
-                if (traitSVGs.eyes) {
-                    parts.push(processSVG(traitSVGs.eyes, 'yellow'));
+                if (traitSVGs.top) {
+                    parts.push(processSVG(traitSVGs.top, 'lime', 'top'));
                 }
                 if (traitSVGs.hair) {
-                    parts.push(processSVG(traitSVGs.hair, 'blue'));
+                    parts.push(processSVG(traitSVGs.hair, 'blue', 'hair'));
                 }
-                if (traitSVGs.tops) {
-                    parts.push(processSVG(traitSVGs.tops, 'lime'));
+                if (traitSVGs.face) {
+                    parts.push(processSVG(traitSVGs.face, 'lime', 'face'));
                 }
-                if (traitSVGs.bottoms) {
-                    parts.push(processSVG(traitSVGs.bottoms, 'lime'));
+                if (traitSVGs.eyes) {
+                    parts.push(processSVG(traitSVGs.eyes, 'yellow', 'eyes'));
                 }
                 
-                // Create combined SVG
+                // Create combined SVG with background
                 return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
-  ${parts.map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, '')).join('\n')}
+  <defs>
+    <style>
+      .cls-1 { fill: #FF4500; }
+      .cls-2 { fill: #FF4500; fill-opacity: 0.2; }
+      .cls-bottom { fill: lime; }
+      .cls-top { fill: lime; }
+      .cls-hair { fill: blue; }
+      .cls-face { fill: lime; }
+      .cls-eyes { fill: yellow; }
+    </style>
+  </defs>
+  
+  <rect width="380" height="600" fill="#F6F7F8"/>
+  <path class="cls-1" d="M190 120c-38.5 0-70 31.5-70 70v40h140v-40c0-38.5-31.5-70-70-70z"/>
+  <path class="cls-2" d="M190 120c38.5 0 70 31.5 70 70v40h-140v-40c0-38.5 31.5-70 70-70z"/>
+  
+  ${parts.join('\n')}
 </svg>`;
             }
 
-            // Process SVG with specific color
-            function processSVG(content, color) {
-                // Clean SVG
-                const cleaned = content
-                    .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
-                
-                // Add color class
-                return cleaned.replace(/<path/g, `<path fill="${color}"`);
+            // Get color for specific trait
+            function getColorForTrait(traitName) {
+                switch(traitName) {
+                    case 'eyes': return 'yellow';
+                    case 'hair': return 'blue';
+                    default: return 'lime';
+                }
             }
 
-            // Update preview with current traits
-            function updatePreview() {
-                const hasSVGs = Object.values(traitSVGs).some(svg => svg !== null);
-                if (hasSVGs) {
-                    previewPlaceholder.classList.add('hidden');
-                    snooPreview.classList.remove('hidden');
+            // Process SVG for preview display
+            function processSVGForPreview(content, color) {
+                // Clean SVG and add color
+                const cleaned = content
+                    .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '')
+                    .replace(/<path/g, `<path fill="${color}"`);
+                
+                // Ensure proper sizing for preview
+                return cleaned.replace(/<svg([^>]*)>/, '<svg$1 width="380" height="600" viewBox="0 0 380 600">');
+            }
+
+            // Process SVG for final output with proper class structure
+            function processSVG(content, color, traitName) {
+                // Extract path elements
+                const paths = content.match(/<path[^>]*>/g) || [];
+                
+                // Create group with class
+                let groupContent = '';
+                paths.forEach((path, i) => {
+                    // Clean up path attributes
+                    const cleanPath = path
+                        .replace(/\s(fill|stroke|class|style|id)="[^"]*"/g, '')
+                        .replace(/<path/, `<path class="cls-${traitName}"`);
                     
-                    // Create a simple preview
-                    const previewContent = Object.values(traitSVGs)
-                        .filter(svg => svg !== null)
-                        .map(svg => svg.replace(/<svg[\s\S]*?>|<\/svg>/g, ''))
-                        .join('\n');
-                    
-                    snooPreview.innerHTML = previewContent;
-                } else {
-                    previewPlaceholder.classList.remove('hidden');
-                    snooPreview.classList.add('hidden');
-                }
+                    groupContent += cleanPath + '\n';
+                });
+                
+                return `<g class="${traitName}-group">\n${groupContent}</g>`;
             }
 
             function showStatus(message, type) {
