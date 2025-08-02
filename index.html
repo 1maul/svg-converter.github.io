@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tomato SVG Converter</title>
+    <title>SVG to Illustrator Converter</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            line-height: 1.6;
             color: #333;
         }
         h1 {
@@ -19,243 +19,301 @@
             margin-bottom: 30px;
         }
         .container {
-            background-color: white;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 5px;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .form-group {
+            text-align: center;
             margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+        .upload-area:hover {
+            background-color: #f0f8ff;
         }
-        select, input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
+        .upload-area.highlight {
+            background-color: #e1f0fa;
+            border-color: #2980b9;
         }
-        button {
-            background-color: #4CAF50;
+        #fileInput {
+            display: none;
+        }
+        .btn {
+            background-color: #3498db;
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            width: 100%;
             transition: background-color 0.3s;
         }
-        button:hover {
-            background-color: #45a049;
+        .btn:hover {
+            background-color: #2980b9;
         }
-        button:disabled {
-            background-color: #cccccc;
+        .btn:disabled {
+            background-color: #95a5a6;
             cursor: not-allowed;
         }
-        .status {
+        .preview {
             margin-top: 20px;
-            padding: 15px;
-            border-radius: 4px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #6c757d;
-        }
-        .status.success {
-            border-left-color: #28a745;
-            background-color: #e8f5e9;
-        }
-        .status.error {
-            border-left-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        .download-btn {
-            display: inline-block;
-            margin-top: 15px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            padding: 12px 20px;
-            border-radius: 4px;
             text-align: center;
         }
-        .download-btn:hover {
-            background-color: #0069d9;
+        #svgPreview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
         }
-        .progress-bar {
-            height: 5px;
-            background-color: #e0e0e0;
-            margin-top: 20px;
-            border-radius: 2px;
-            overflow: hidden;
+        .file-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
         }
-        .progress {
-            height: 100%;
-            background-color: #4CAF50;
-            width: 0%;
-            transition: width 0.3s;
+        .settings {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+        .settings label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .settings input[type="checkbox"] {
+            margin-right: 10px;
         }
     </style>
 </head>
 <body>
+    <h1>SVG to Illustrator-Compatible Converter</h1>
+    
     <div class="container">
-        <h1>SVG Color Converter</h1>
-        
-        <div class="form-group">
-            <label for="color">Choose Color:</label>
-            <select id="color" required>
-                <option value="" disabled selected>Select a color</option>
-                <option value="lime">Lime (For Skin)</option>
-                <option value="blue">Blue (For Hair)</option>
-                <option value="yellow">Yellow (For Eyes)</option>
-            </select>
+        <div id="uploadArea" class="upload-area">
+            <p>Drag & drop your SVG file here or click to browse</p>
+            <input type="file" id="fileInput" accept=".svg" />
+            <button id="browseBtn" class="btn">Select SVG File</button>
         </div>
         
-        <div class="form-group">
-            <label for="file">SVG File:</label>
-            <input type="file" id="file" accept=".svg" required>
+        <div class="settings">
+            <h3>Conversion Options</h3>
+            <label>
+                <input type="checkbox" id="inlineStyles" checked>
+                Convert CSS to inline styles (recommended for Illustrator)
+            </label>
+            <label>
+                <input type="checkbox" id="removeScripts" checked>
+                Remove JavaScript (recommended for security)
+            </label>
+            <label>
+                <input type="checkbox" id="simplifyIds" checked>
+                Simplify IDs and classes
+            </label>
         </div>
         
-        <button id="process-btn">Process SVG</button>
-        
-        <div class="progress-bar">
-            <div class="progress" id="progress"></div>
+        <div class="preview-controls">
+            <button id="convertBtn" class="btn" disabled>Convert & Download</button>
+            <div class="file-info" id="fileInfo">No file selected</div>
         </div>
         
-        <div class="status" id="status" style="display: none;"></div>
-        
-        <a id="download-link" class="download-btn" style="display: none;">Download Processed SVG</a>
+        <div class="preview">
+            <div id="svgPreviewContainer"></div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const colorSelect = document.getElementById('color');
-            const fileInput = document.getElementById('file');
-            const processBtn = document.getElementById('process-btn');
-            const statusDiv = document.getElementById('status');
-            const progressBar = document.getElementById('progress');
-            const downloadLink = document.getElementById('download-link');
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const browseBtn = document.getElementById('browseBtn');
+            const convertBtn = document.getElementById('convertBtn');
+            const fileInfo = document.getElementById('fileInfo');
+            const svgPreviewContainer = document.getElementById('svgPreviewContainer');
+            const inlineStylesCheckbox = document.getElementById('inlineStyles');
+            const removeScriptsCheckbox = document.getElementById('removeScripts');
+            const simplifyIdsCheckbox = document.getElementById('simplifyIds');
             
-            const STATUS_MESSAGES = [
-                "Starting SVG processing...",
-                "Applying color...",
-                "Finalizing..."
-            ];
+            let currentFile = null;
             
-            processBtn.addEventListener('click', async function() {
-                // Validate inputs
-                if (!colorSelect.value) {
-                    showStatus('Please select a color', 'error');
-                    return;
-                }
+            // Handle drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('highlight');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('highlight');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('highlight');
                 
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    showStatus('Please select an SVG file', 'error');
-                    return;
-                }
-                
-                const file = fileInput.files[0];
-                if (!file.name.endsWith('.svg')) {
-                    showStatus('Please upload a valid .svg file', 'error');
-                    return;
-                }
-                
-                // Disable button during processing
-                processBtn.disabled = true;
-                
-                try {
-                    // Show initial status
-                    showStatus(STATUS_MESSAGES[0]);
-                    progressBar.style.width = '0%';
-                    
-                    // Simulate progress updates
-                    for (let i = 0; i < STATUS_MESSAGES.length; i++) {
-                        await delay(800);
-                        showStatus(STATUS_MESSAGES[i]);
-                        progressBar.style.width = `${(i + 1) * 33}%`;
+                if (e.dataTransfer.files.length) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                        handleFileSelection(file);
+                    } else {
+                        alert('Please select an SVG file.');
                     }
-                    
-                    // Process the file
-                    const color = colorSelect.value;
-                    const content = await readFileAsText(file);
-                    const processedSVG = optimizeSVG(content, color);
-                    
-                    // Create download link
-                    const blob = new Blob([processedSVG], { type: 'image/svg+xml' });
-                    const url = URL.createObjectURL(blob);
-                    downloadLink.href = url;
-                    downloadLink.download = `tomato_${file.name}`;
-                    
-                    // Show success
-                    showStatus('Processing complete! Your file is ready for download.', 'success');
-                    downloadLink.style.display = 'inline-block';
-                    progressBar.style.width = '100%';
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    showStatus(`❌ Error: ${error.message}`, 'error');
-                    progressBar.style.width = '0%';
-                } finally {
-                    processBtn.disabled = false;
                 }
             });
             
-            function showStatus(message, type = '') {
-                statusDiv.textContent = message;
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'status';
-                if (type) {
-                    statusDiv.classList.add(type);
+            // Handle file selection via button
+            browseBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleFileSelection(fileInput.files[0]);
                 }
+            });
+            
+            // Handle file processing
+            function handleFileSelection(file) {
+                currentFile = file;
+                fileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                convertBtn.disabled = false;
+                
+                // Preview the SVG
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    svgPreviewContainer.innerHTML = e.target.result;
+                };
+                reader.readAsText(file);
             }
             
-            function delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
+            // Handle conversion and download
+            convertBtn.addEventListener('click', async () => {
+                if (!currentFile) return;
+                
+                try {
+                    const svgContent = await readFileAsText(currentFile);
+                    let processedSvg = processSvg(svgContent);
+                    
+                    // Create download
+                    const blob = new Blob([processedSvg], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = currentFile.name.replace('.svg', '') + '_ai.svg';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error('Error processing SVG:', error);
+                    alert('An error occurred while processing the SVG file.');
+                }
+            });
             
             function readFileAsText(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = event => resolve(event.target.result);
-                    reader.onerror = error => reject(error);
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = e => reject(reader.error);
                     reader.readAsText(file);
                 });
             }
             
-            function optimizeSVG(content, color) {
-            // Set fixed canvas size
-            const viewBox = 'viewBox="0 0 380 600"';
+            function processSvg(svgContent) {
+                // Parse the SVG
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+                const svg = doc.querySelector('svg');
+                
+                if (!svg) {
+                    throw new Error('No SVG element found in the file');
+                }
+                
+                // Remove scripts if requested
+                if (removeScriptsCheckbox.checked) {
+                    const scripts = doc.querySelectorAll('script');
+                    scripts.forEach(script => script.remove());
+                }
+                
+                // Inline styles if requested
+                if (inlineStylesCheckbox.checked) {
+                    inlineStyles(doc, svg);
+                }
+                
+                // Simplify IDs and classes if requested
+                if (simplifyIdsCheckbox.checked) {
+                    simplifyIdsAndClasses(doc);
+                }
+                
+                // Serialize back to string
+                const serializer = new XMLSerializer();
+                return serializer.serializeToString(svg);
+            }
             
+            function inlineStyles(doc, svgElement) {
+                // Get all style elements
+                const styleElements = doc.querySelectorAll('style');
                 
-                // Extract necessary namespace declarations
-                const xmlnsMatch = content.match(/xmlns="[^"]*"/) || 'xmlns="http://www.w3.org/2000/svg"';
-                const inkscapeNSMatch = content.match(/xmlns:inkscape="[^"]*"/);
-                const sodipodiNSMatch = content.match(/xmlns:sodipodi="[^"]*"/);
+                // Parse all CSS rules
+                const cssRules = [];
+                styleElements.forEach(styleElement => {
+                    try {
+                        const sheet = styleElement.sheet;
+                        if (sheet) {
+                            Array.from(sheet.cssRules).forEach(rule => {
+                                cssRules.push(rule);
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Could not parse stylesheet:', e);
+                    }
+                });
                 
-                // Clean the SVG content - preserve important elements
-                const cleaned = content
-                    .replace(/<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '')
-                    .replace(/<metadata>[\s\S]*?<\/metadata>/, '');
+                // Apply styles inline
+                cssRules.forEach(rule => {
+                    if (rule.type === CSSRule.STYLE_RULE) {
+                        const selector = rule.selectorText;
+                        try {
+                            const elements = doc.querySelectorAll(selector);
+                            elements.forEach(element => {
+                                const existingStyle = element.getAttribute('style') || '';
+                                element.setAttribute('style', existingStyle + rule.style.cssText);
+                            });
+                        } catch (e) {
+                            console.warn(`Could not apply selector ${selector}:`, e);
+                        }
+                    }
+                });
                 
-                // Build namespace declarations
-                let namespaceDeclarations = [xmlnsMatch];
-                if (inkscapeNSMatch) namespaceDeclarations.push(inkscapeNSMatch);
-                if (sodipodiNSMatch) namespaceDeclarations.push(sodipodiNSMatch);
+                // Remove style elements
+                styleElements.forEach(el => el.remove());
+            }
+            
+            function simplifyIdsAndClasses(doc) {
+                // Simplify IDs
+                const elementsWithId = doc.querySelectorAll('[id]');
+                elementsWithId.forEach((element, index) => {
+                    const oldId = element.id;
+                    const newId = `id${index + 1}`;
+                    element.id = newId;
+                    
+                    // Update any references to this ID
+                    const references = doc.querySelectorAll(`[href="#${oldId}"], [xlink:href="#${oldId}"]`);
+                    references.forEach(ref => {
+                        if (ref.hasAttribute('href')) {
+                            ref.setAttribute('href', `#${newId}`);
+                        }
+                        if (ref.hasAttribute('xlink:href')) {
+                            ref.setAttribute('xlink:href', `#${newId}`);
+                        }
+                    });
+                });
                 
-                // Create the processed SVG
-                return `<?xml version="1.0" encoding="UTF-8"?>
-<svg ${namespaceDeclarations.join(' ')} ${viewBox}>
-  <defs>
-    <style>.cls-1 { fill: ${color}; }</style>
-  </defs>
-  ${cleaned
-    .replace(/<svg[\s\S]*?>|<\/svg>/g, '')
-    .replace(/<path/g, '<path class="cls-1"')
-  }
-</svg>`;
+                // Simplify classes (just remove them as they're now inlined)
+                const elementsWithClass = doc.querySelectorAll('[class]');
+                elementsWithClass.forEach(element => {
+                    element.removeAttribute('class');
+                });
             }
         });
     </script>
