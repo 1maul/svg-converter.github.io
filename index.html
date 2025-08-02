@@ -76,6 +76,11 @@
             display: inline-block;
             margin-top: 15px;
             background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            text-align: center;
         }
         .download-btn:hover {
             background-color: #0069d9;
@@ -221,13 +226,28 @@
             }
             
             function optimizeSVG(content, color) {
-                // Clean the SVG content
+                // Extract the viewBox from the original SVG if it exists
+                const viewBoxMatch = content.match(/viewBox="([^"]*)"/);
+                const viewBox = viewBoxMatch ? viewBoxMatch[0] : 'viewBox="0 0 380 600"';
+                
+                // Extract necessary namespace declarations
+                const xmlnsMatch = content.match(/xmlns="[^"]*"/) || 'xmlns="http://www.w3.org/2000/svg"';
+                const inkscapeNSMatch = content.match(/xmlns:inkscape="[^"]*"/);
+                const sodipodiNSMatch = content.match(/xmlns:sodipodi="[^"]*"/);
+                
+                // Clean the SVG content - preserve important elements
                 const cleaned = content
-                    .replace(/<!--[\s\S]*?-->|<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '');
+                    .replace(/<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '')
+                    .replace(/<metadata>[\s\S]*?<\/metadata>/, '');
+                
+                // Build namespace declarations
+                let namespaceDeclarations = [xmlnsMatch];
+                if (inkscapeNSMatch) namespaceDeclarations.push(inkscapeNSMatch);
+                if (sodipodiNSMatch) namespaceDeclarations.push(sodipodiNSMatch);
                 
                 // Create the processed SVG
                 return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 600">
+<svg ${namespaceDeclarations.join(' ')} ${viewBox}>
   <defs>
     <style>.cls-1 { fill: ${color}; }</style>
   </defs>
