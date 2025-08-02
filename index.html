@@ -6,23 +6,15 @@
     <title>SVG to Illustrator Converter</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            line-height: 1.6;
-            color: #333;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
         }
         .container {
-            background-color: #f9f9f9;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
         }
         .upload-area {
             border: 2px dashed #3498db;
@@ -31,61 +23,32 @@
             text-align: center;
             margin-bottom: 20px;
             cursor: pointer;
-            transition: all 0.3s;
-        }
-        .upload-area:hover {
-            background-color: #f0f8ff;
-        }
-        .upload-area.highlight {
-            background-color: #e1f0fa;
-            border-color: #2980b9;
         }
         #fileInput {
             display: none;
         }
-        .btn {
+        button {
             background-color: #3498db;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #2980b9;
-        }
-        .btn:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
+            margin-top: 10px;
         }
         .preview {
+            display: flex;
+            justify-content: space-around;
             margin-top: 20px;
-            text-align: center;
         }
-        #svgPreview {
+        .svg-container {
+            width: 45%;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        svg {
             max-width: 100%;
             max-height: 300px;
-            border: 1px solid #ddd;
-        }
-        .file-info {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        .settings {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #ecf0f1;
-            border-radius: 5px;
-        }
-        .settings label {
-            display: block;
-            margin-bottom: 10px;
-        }
-        .settings input[type="checkbox"] {
-            margin-right: 10px;
         }
     </style>
 </head>
@@ -96,32 +59,20 @@
         <div id="uploadArea" class="upload-area">
             <p>Drag & drop your SVG file here or click to browse</p>
             <input type="file" id="fileInput" accept=".svg" />
-            <button id="browseBtn" class="btn">Select SVG File</button>
+            <button id="browseBtn">Select SVG File</button>
         </div>
         
-        <div class="settings">
-            <h3>Conversion Options</h3>
-            <label>
-                <input type="checkbox" id="inlineStyles" checked>
-                Convert CSS to inline styles (recommended for Illustrator)
-            </label>
-            <label>
-                <input type="checkbox" id="removeScripts" checked>
-                Remove JavaScript (recommended for security)
-            </label>
-            <label>
-                <input type="checkbox" id="simplifyIds" checked>
-                Simplify IDs and classes
-            </label>
-        </div>
-        
-        <div class="preview-controls">
-            <button id="convertBtn" class="btn" disabled>Convert & Download</button>
-            <div class="file-info" id="fileInfo">No file selected</div>
-        </div>
+        <button id="convertBtn" disabled>Convert & Download</button>
         
         <div class="preview">
-            <div id="svgPreviewContainer"></div>
+            <div class="svg-container">
+                <h3>Original SVG</h3>
+                <div id="originalPreview"></div>
+            </div>
+            <div class="svg-container">
+                <h3>Converted SVG</h3>
+                <div id="convertedPreview"></div>
+            </div>
         </div>
     </div>
 
@@ -131,27 +82,24 @@
             const uploadArea = document.getElementById('uploadArea');
             const browseBtn = document.getElementById('browseBtn');
             const convertBtn = document.getElementById('convertBtn');
-            const fileInfo = document.getElementById('fileInfo');
-            const svgPreviewContainer = document.getElementById('svgPreviewContainer');
-            const inlineStylesCheckbox = document.getElementById('inlineStyles');
-            const removeScriptsCheckbox = document.getElementById('removeScripts');
-            const simplifyIdsCheckbox = document.getElementById('simplifyIds');
+            const originalPreview = document.getElementById('originalPreview');
+            const convertedPreview = document.getElementById('convertedPreview');
             
             let currentFile = null;
             
             // Handle drag and drop
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                uploadArea.classList.add('highlight');
+                uploadArea.style.backgroundColor = '#f0f8ff';
             });
             
             uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('highlight');
+                uploadArea.style.backgroundColor = '';
             });
             
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadArea.classList.remove('highlight');
+                uploadArea.style.backgroundColor = '';
                 
                 if (e.dataTransfer.files.length) {
                     const file = e.dataTransfer.files[0];
@@ -175,13 +123,16 @@
             // Handle file processing
             function handleFileSelection(file) {
                 currentFile = file;
-                fileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
                 convertBtn.disabled = false;
                 
-                // Preview the SVG
+                // Preview the original SVG
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    svgPreviewContainer.innerHTML = e.target.result;
+                    originalPreview.innerHTML = e.target.result;
+                    
+                    // Process the SVG immediately for preview
+                    const processedSvg = processSvg(e.target.result);
+                    convertedPreview.innerHTML = processedSvg;
                 };
                 reader.readAsText(file);
             }
@@ -192,7 +143,7 @@
                 
                 try {
                     const svgContent = await readFileAsText(currentFile);
-                    let processedSvg = processSvg(svgContent);
+                    const processedSvg = processSvg(svgContent);
                     
                     // Create download
                     const blob = new Blob([processedSvg], { type: 'image/svg+xml' });
@@ -229,91 +180,54 @@
                     throw new Error('No SVG element found in the file');
                 }
                 
-                // Remove scripts if requested
-                if (removeScriptsCheckbox.checked) {
-                    const scripts = doc.querySelectorAll('script');
-                    scripts.forEach(script => script.remove());
-                }
+                // Remove unnecessary attributes
+                svg.removeAttribute('version');
+                svg.removeAttribute('id');
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.removeAttribute('xmlns:svg');
                 
-                // Inline styles if requested
-                if (inlineStylesCheckbox.checked) {
-                    inlineStyles(doc, svg);
-                }
+                // Add style element
+                const style = doc.createElement('style');
+                style.textContent = `
+                    .cls-1 {
+                        fill:blue;
+                    }
+                `;
                 
-                // Simplify IDs and classes if requested
-                if (simplifyIdsCheckbox.checked) {
-                    simplifyIdsAndClasses(doc);
-                }
+                const defs = doc.createElement('defs');
+                defs.appendChild(style);
+                svg.insertBefore(defs, svg.firstChild);
+                
+                // Process paths
+                const paths = svg.querySelectorAll('path');
+                paths.forEach(path => {
+                    // Remove inline style
+                    path.removeAttribute('style');
+                    
+                    // Add class
+                    path.setAttribute('class', 'cls-1');
+                });
+                
+                // Process groups
+                const groups = svg.querySelectorAll('g');
+                groups.forEach(group => {
+                    // Remove inline style
+                    group.removeAttribute('style');
+                    
+                    // Add id if needed
+                    if (!group.id) {
+                        group.id = 'layer1';
+                    }
+                });
+                
+                // Remove image element if present
+                const images = svg.querySelectorAll('image');
+                images.forEach(img => img.remove());
                 
                 // Serialize back to string
                 const serializer = new XMLSerializer();
                 return serializer.serializeToString(svg);
-            }
-            
-            function inlineStyles(doc, svgElement) {
-                // Get all style elements
-                const styleElements = doc.querySelectorAll('style');
-                
-                // Parse all CSS rules
-                const cssRules = [];
-                styleElements.forEach(styleElement => {
-                    try {
-                        const sheet = styleElement.sheet;
-                        if (sheet) {
-                            Array.from(sheet.cssRules).forEach(rule => {
-                                cssRules.push(rule);
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('Could not parse stylesheet:', e);
-                    }
-                });
-                
-                // Apply styles inline
-                cssRules.forEach(rule => {
-                    if (rule.type === CSSRule.STYLE_RULE) {
-                        const selector = rule.selectorText;
-                        try {
-                            const elements = doc.querySelectorAll(selector);
-                            elements.forEach(element => {
-                                const existingStyle = element.getAttribute('style') || '';
-                                element.setAttribute('style', existingStyle + rule.style.cssText);
-                            });
-                        } catch (e) {
-                            console.warn(`Could not apply selector ${selector}:`, e);
-                        }
-                    }
-                });
-                
-                // Remove style elements
-                styleElements.forEach(el => el.remove());
-            }
-            
-            function simplifyIdsAndClasses(doc) {
-                // Simplify IDs
-                const elementsWithId = doc.querySelectorAll('[id]');
-                elementsWithId.forEach((element, index) => {
-                    const oldId = element.id;
-                    const newId = `id${index + 1}`;
-                    element.id = newId;
-                    
-                    // Update any references to this ID
-                    const references = doc.querySelectorAll(`[href="#${oldId}"], [xlink:href="#${oldId}"]`);
-                    references.forEach(ref => {
-                        if (ref.hasAttribute('href')) {
-                            ref.setAttribute('href', `#${newId}`);
-                        }
-                        if (ref.hasAttribute('xlink:href')) {
-                            ref.setAttribute('xlink:href', `#${newId}`);
-                        }
-                    });
-                });
-                
-                // Simplify classes (just remove them as they're now inlined)
-                const elementsWithClass = doc.querySelectorAll('[class]');
-                elementsWithClass.forEach(element => {
-                    element.removeAttribute('class');
-                });
             }
         });
     </script>
