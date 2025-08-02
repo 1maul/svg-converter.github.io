@@ -130,43 +130,134 @@
         <a id="download-link" class="download-btn" style="display: none;">Download Processed SVG</a>
     </div>
 
-   <script>
-        // [Previous JavaScript remains the same until the optimizeSVG function]
-
-        function optimizeSVG(content, color) {
-            // Set fixed canvas size
-            const viewBox = 'viewBox="0 0 380 600"';
-            const width = 'width="380"';
-            const height = 'height="600"';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorSelect = document.getElementById('color');
+            const fileInput = document.getElementById('file');
+            const processBtn = document.getElementById('process-btn');
+            const statusDiv = document.getElementById('status');
+            const progressBar = document.getElementById('progress');
+            const downloadLink = document.getElementById('download-link');
             
-            // Extract and preserve necessary namespaces
-            const xmlns = 'xmlns="http://www.w3.org/2000/svg"';
-            const xmlnsXlink = 'xmlns:xlink="http://www.w3.org/1999/xlink"';
+            const STATUS_MESSAGES = [
+                "Starting SVG processing...",
+                "Applying color...",
+                "Finalizing..."
+            ];
             
-            // Clean the SVG content more thoroughly
-            const cleaned = content
-                .replace(/<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>/, '')
-                .replace(/<metadata>[\s\S]*?<\/metadata>/, '')
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/, '') // Remove existing styles
-                .replace(/\s(id|class|style|xlink:href|xml:space)="[^"]*"/g, '')
-                .replace(/<image[\s\S]*?>|<\/image>/g, '');
+            processBtn.addEventListener('click', async function() {
+                // Validate inputs
+                if (!colorSelect.value) {
+                    showStatus('Please select a color', 'error');
+                    return;
+                }
+                
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    showStatus('Please select an SVG file', 'error');
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                if (!file.name.endsWith('.svg')) {
+                    showStatus('Please upload a valid .svg file', 'error');
+                    return;
+                }
+                
+                // Disable button during processing
+                processBtn.disabled = true;
+                
+                try {
+                    // Show initial status
+                    showStatus(STATUS_MESSAGES[0]);
+                    progressBar.style.width = '0%';
+                    
+                    // Simulate progress updates
+                    for (let i = 0; i < STATUS_MESSAGES.length; i++) {
+                        await delay(800);
+                        showStatus(STATUS_MESSAGES[i]);
+                        progressBar.style.width = `${(i + 1) * 33}%`;
+                    }
+                    
+                    // Process the file
+                    const color = colorSelect.value;
+                    const content = await readFileAsText(file);
+                    const processedSVG = optimizeSVG(content, color);
+                    
+                    // Create download link
+                    const blob = new Blob([processedSVG], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    downloadLink.href = url;
+                    downloadLink.download = `tomato_${file.name}`;
+                    
+                    // Show success
+                    showStatus('Processing complete! Your file is ready for download.', 'success');
+                    downloadLink.style.display = 'inline-block';
+                    progressBar.style.width = '100%';
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(`❌ Error: ${error.message}`, 'error');
+                    progressBar.style.width = '0%';
+                } finally {
+                    processBtn.disabled = false;
+                }
+            });
             
-            // Create the processed SVG with internal CSS
-            return `<?xml version="1.0" encoding="UTF-8"?>
-<svg ${xmlns} ${xmlnsXlink} ${viewBox} ${width} ${height}>
+            function showStatus(message, type = '') {
+                statusDiv.textContent = message;
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status';
+                if (type) {
+                    statusDiv.classList.add(type);
+                }
+            }
+            
+            function delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            function readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = event => resolve(event.target.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsText(file);
+                });
+            }
+            
+            function optimizeSVG(content, color) {
+                // Extract the viewBox from the original SVG if it exists
+                const viewBoxMatch = content.match(/viewBox="([^"]*)"/);
+                const viewBox = viewBoxMatch ? viewBoxMatch[0] : 'viewBox="0 0 380 600"';
+                
+                // Extract necessary namespace declarations
+                const xmlnsMatch = content.match(/xmlns="[^"]*"/) || 'xmlns="http://www.w3.org/2000/svg"';
+                const inkscapeNSMatch = content.match(/xmlns:inkscape="[^"]*"/);
+                const sodipodiNSMatch = content.match(/xmlns:sodipodi="[^"]*"/);
+                
+                // Clean the SVG content - preserve important elements
+                const cleaned = content
+                    .replace(/<\?xml[\s\S]*?\?>|<!DOCTYPE[\s\S]*?>|\s(id|class|style|xlink:href|xmlns:xlink)="[^"]*"|<image[\s\S]*?>|<\/image>/g, '')
+                    .replace(/<metadata>[\s\S]*?<\/metadata>/, '');
+                
+                // Build namespace declarations
+                let namespaceDeclarations = [xmlnsMatch];
+                if (inkscapeNSMatch) namespaceDeclarations.push(inkscapeNSMatch);
+                if (sodipodiNSMatch) namespaceDeclarations.push(sodipodiNSMatch);
+                
+                // Create the processed SVG
+                return `<?xml version="1.0" encoding="UTF-8"?>
+<svg ${namespaceDeclarations.join(' ')} ${viewBox}>
   <defs>
-    <style type="text/css">
-      <![CDATA[
-        .cls-1 { fill: ${color}; }
-      ]]>
-    </style>
+    <style>.cls-1 { fill: ${color}; }</style>
   </defs>
   ${cleaned
     .replace(/<svg[\s\S]*?>|<\/svg>/g, '')
     .replace(/<path/g, '<path class="cls-1"')
   }
 </svg>`;
-        }
+            }
+        });
     </script>
 </body>
 </html>
