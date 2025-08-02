@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG Color Converter</title>
+    <title>Tomato SVG Converter</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -226,9 +226,10 @@
             }
             
             function optimizeSVG(content, color) {
-                // Extract the viewBox from the original SVG if it exists
-                const viewBoxMatch = content.match(/viewBox="([^"]*)"/);
-                const viewBox = viewBoxMatch ? viewBoxMatch[0] : 'viewBox="0 0 380 600"';
+            // Set fixed canvas size
+            const viewBox = 'viewBox="0 0 380 600"';
+            const width = 'width="380"';
+            const height = 'height="600"';
                 
                 // Extract necessary namespace declarations
                 const xmlnsMatch = content.match(/xmlns="[^"]*"/) || 'xmlns="http://www.w3.org/2000/svg"';
