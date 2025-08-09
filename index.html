@@ -5,231 +5,726 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG to Illustrator Converter</title>
     <style>
+        :root {
+            --primary: #5865F2;
+            --primary-dark: #4752C4;
+            --error: #ED4245;
+            --success: #3BA55C;
+            --text: #2C2F33;
+            --light-bg: #F8F9FA;
+            --border: #DCDDDE;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
+            color: var(--text);
+            line-height: 1.6;
         }
+        
         .container {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
-        .upload-area {
-            border: 2px dashed #3498db;
-            border-radius: 5px;
+        
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .converter-card {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
             padding: 30px;
             text-align: center;
-            margin-bottom: 20px;
-            cursor: pointer;
+            margin-bottom: 25px;
+            transition: all 0.3s;
         }
-        #fileInput {
+        
+        .converter-card.active {
+            border-color: var(--primary);
+            background-color: rgba(88, 101, 242, 0.05);
+        }
+        
+        .converter-card.error {
+            border-color: var(--error);
+            background-color: rgba(237, 66, 69, 0.05);
+        }
+        
+        .file-input {
             display: none;
         }
-        button {
-            background-color: #3498db;
+        
+        .upload-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            margin-bottom: 15px;
+        }
+        
+        .upload-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            word-break: break-all;
+        }
+        
+        .file-size {
+            color: #666;
+        }
+        
+        .settings-panel {
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .settings-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        select, input[type="color"], input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            background-color: white;
+        }
+        
+        input[type="color"] {
+            height: 40px;
+            padding: 3px;
+        }
+        
+        .color-preview {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        
+        .convert-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
-        }
-        .preview {
-            display: flex;
-            justify-content: space-around;
+            transition: background-color 0.2s;
             margin-top: 20px;
         }
-        .svg-container {
-            width: 45%;
-            border: 1px solid #ddd;
-            padding: 10px;
+        
+        .convert-btn:hover {
+            background-color: var(--primary-dark);
         }
-        svg {
+        
+        .convert-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status-container {
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            background-color: var(--light-bg);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .progress-container {
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        
+        .result-container {
+            margin-top: 25px;
+            display: none;
+            text-align: center;
+        }
+        
+        .preview-container {
+            max-width: 100%;
+            margin: 20px auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            background-color: white;
+        }
+        
+        .svg-preview {
             max-width: 100%;
             max-height: 300px;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--success);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        
+        .download-btn:hover {
+            background-color: #2D8C4B;
+        }
+        
+        .error-message {
+            color: var(--error);
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .advanced-options {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .toggle-advanced {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        .toggle-advanced svg {
+            margin-right: 5px;
+            transition: transform 0.2s;
+        }
+        
+        .advanced-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .advanced-content.show {
+            max-height: 500px;
+        }
+        
+        .upload-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin: 15px auto;
+            display: block;
+            border: 1px solid var(--border);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .converter-card {
+                padding: 20px;
+            }
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <h1>SVG to Illustrator-Compatible Converter</h1>
-    
     <div class="container">
-        <div id="uploadArea" class="upload-area">
-            <p>Drag & drop your SVG file here or click to browse</p>
-            <input type="file" id="fileInput" accept=".svg" />
-            <button id="browseBtn">Select SVG File</button>
+        <h1>SVG to Illustrator Converter</h1>
+        <p class="subtitle">Convert any SVG file to Illustrator-compatible format with proper internal CSS</p>
+        
+        <div class="converter-card" id="drop-area">
+            <i class="fas fa-file-upload" style="font-size: 48px; color: var(--primary); margin-bottom: 15px;"></i>
+            <h3>Drag & Drop SVG File Here</h3>
+            <p>or</p>
+            <label for="file-input" class="upload-btn">
+                <i class="fas fa-folder-open"></i> Select File
+            </label>
+            <input type="file" id="file-input" class="file-input" accept=".svg">
+            <div class="file-info" id="file-info">
+                <div class="file-name" id="file-name"></div>
+                <div class="file-size" id="file-size"></div>
+            </div>
+            <div class="error-message" id="file-error"></div>
+            <img id="upload-preview" class="upload-preview" style="display: none;">
         </div>
         
-        <button id="convertBtn" disabled>Convert & Download</button>
+        <div class="settings-panel">
+            <div class="settings-title">
+                <span>Conversion Settings</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="color-mode">Color Mode</label>
+                <select id="color-mode">
+                    <option value="preserve">Preserve Original Colors</option>
+                    <option value="replace">Replace Fill Color</option>
+                    <option value="custom">Custom Styling</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="color-replace-group" style="display: none;">
+                <label for="fill-color">Fill Color <span class="color-preview" id="color-preview" style="background-color: #00FF00;"></span></label>
+                <input type="color" id="fill-color" value="#00FF00">
+            </div>
+            
+            <div class="form-group" id="custom-styling-group" style="display: none;">
+                <label for="stroke-color">Stroke Color</label>
+                <input type="color" id="stroke-color" value="#000000">
+                
+                <label for="stroke-width" style="margin-top: 10px;">Stroke Width</label>
+                <input type="text" id="stroke-width" value="0.5" placeholder="e.g. 0.5">
+                
+                <label for="stroke-miterlimit" style="margin-top: 10px;">Stroke Miter Limit</label>
+                <input type="text" id="stroke-miterlimit" value="10" placeholder="e.g. 10">
+            </div>
+            
+            <div class="advanced-options">
+                <button type="button" class="toggle-advanced" id="toggle-advanced">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    Advanced Options
+                </button>
+                <div class="advanced-content" id="advanced-content">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="svg-id">SVG ID</label>
+                        <input type="text" id="svg-id" value="Layer_1" placeholder="e.g. Layer_1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="viewbox">ViewBox</label>
+                        <input type="text" id="viewbox" placeholder="Auto-detect (0 0 width height)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="precision">Decimal Precision</label>
+                        <select id="precision">
+                            <option value="1">1 (Rough)</option>
+                            <option value="2">2 (Balanced)</option>
+                            <option value="3" selected>3 (Default)</option>
+                            <option value="4">4 (Precise)</option>
+                            <option value="5">5 (Very Precise)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="convert-btn" id="convert-btn" disabled>
+                Convert to Illustrator SVG
+            </button>
+        </div>
         
-        <div class="preview">
-            <div class="svg-container">
-                <h3>Original SVG</h3>
-                <div id="originalPreview"></div>
+        <div class="status-container" id="status-container">
+            <div class="status-message">
+                <i class="fas fa-cog fa-spin status-icon"></i>
+                <span id="status-text">Processing SVG file...</span>
             </div>
-            <div class="svg-container">
-                <h3>Converted SVG</h3>
-                <div id="convertedPreview"></div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
             </div>
+        </div>
+        
+        <div class="result-container" id="result-container">
+            <h3>Conversion Complete!</h3>
+            <p>Your Illustrator-compatible SVG is ready to download.</p>
+            
+            <div class="preview-container">
+                <img class="svg-preview" id="svg-preview" src="" alt="SVG Preview">
+            </div>
+            
+            <a href="#" class="download-btn" id="download-btn">
+                <i class="fas fa-download"></i> Download SVG
+            </a>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('fileInput');
-            const uploadArea = document.getElementById('uploadArea');
-            const browseBtn = document.getElementById('browseBtn');
-            const convertBtn = document.getElementById('convertBtn');
-            const originalPreview = document.getElementById('originalPreview');
-            const convertedPreview = document.getElementById('convertedPreview');
-            
-            let currentFile = null;
-            
-            // Handle drag and drop
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.style.backgroundColor = '#f0f8ff';
+        // DOM Elements
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const fileError = document.getElementById('file-error');
+        const uploadPreview = document.getElementById('upload-preview');
+        const convertBtn = document.getElementById('convert-btn');
+        const colorMode = document.getElementById('color-mode');
+        const colorReplaceGroup = document.getElementById('color-replace-group');
+        const customStylingGroup = document.getElementById('custom-styling-group');
+        const fillColor = document.getElementById('fill-color');
+        const colorPreview = document.getElementById('color-preview');
+        const strokeColor = document.getElementById('stroke-color');
+        const strokeWidth = document.getElementById('stroke-width');
+        const strokeMiterlimit = document.getElementById('stroke-miterlimit');
+        const svgId = document.getElementById('svg-id');
+        const viewbox = document.getElementById('viewbox');
+        const precision = document.getElementById('precision');
+        const toggleAdvanced = document.getElementById('toggle-advanced');
+        const advancedContent = document.getElementById('advanced-content');
+        const statusContainer = document.getElementById('status-container');
+        const statusText = document.getElementById('status-text');
+        const progressBar = document.getElementById('progress-bar');
+        const resultContainer = document.getElementById('result-container');
+        const svgPreview = document.getElementById('svg-preview');
+        const downloadBtn = document.getElementById('download-btn');
+        
+        // Current file data
+        let currentFile = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update color preview
+            fillColor.addEventListener('input', () => {
+                colorPreview.style.backgroundColor = fillColor.value;
             });
             
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.backgroundColor = '';
+            // Color mode change
+            colorMode.addEventListener('change', () => {
+                colorReplaceGroup.style.display = colorMode.value === 'replace' ? 'block' : 'none';
+                customStylingGroup.style.display = colorMode.value === 'custom' ? 'block' : 'none';
             });
             
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.style.backgroundColor = '';
-                
-                if (e.dataTransfer.files.length) {
-                    const file = e.dataTransfer.files[0];
-                    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
-                        handleFileSelection(file);
-                    } else {
-                        alert('Please select an SVG file.');
-                    }
-                }
+            // Toggle advanced options
+            toggleAdvanced.addEventListener('click', () => {
+                advancedContent.classList.toggle('show');
+                toggleAdvanced.querySelector('svg').style.transform = advancedContent.classList.contains('show') 
+                    ? 'rotate(180deg)' 
+                    : 'rotate(0deg)';
             });
             
-            // Handle file selection via button
-            browseBtn.addEventListener('click', () => fileInput.click());
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
             
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length) {
-                    handleFileSelection(fileInput.files[0]);
-                }
+            // Drag and drop events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
             });
             
-            // Handle file processing
-            function handleFileSelection(file) {
-                currentFile = file;
-                convertBtn.disabled = false;
-                
-                // Preview the original SVG
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    originalPreview.innerHTML = e.target.result;
-                    
-                    // Process the SVG immediately for preview
-                    const processedSvg = processSvg(e.target.result);
-                    convertedPreview.innerHTML = processedSvg;
-                };
-                reader.readAsText(file);
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // Convert button
+            convertBtn.addEventListener('click', convertSVG);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight() {
+            dropArea.classList.add('active');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('active');
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect({ target: fileInput });
+            }
+        }
+        
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.svg')) {
+                showFileError('Please select a valid SVG file');
+                return;
             }
             
-            // Handle conversion and download
-            convertBtn.addEventListener('click', async () => {
-                if (!currentFile) return;
+            // Clear any previous errors
+            hideFileError();
+            
+            // Update UI
+            currentFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            convertBtn.disabled = false;
+            dropArea.classList.remove('error');
+            
+            // Create preview of the uploaded SVG
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const svgContent = e.target.result;
+                uploadPreview.style.display = 'block';
+                uploadPreview.src = URL.createObjectURL(new Blob([svgContent], { type: 'image/svg+xml' }));
+            };
+            reader.readAsText(file);
+        }
+        
+        function showFileError(message) {
+            fileError.textContent = message;
+            fileError.style.display = 'block';
+            dropArea.classList.add('error');
+            convertBtn.disabled = true;
+            currentFile = null;
+            fileName.textContent = '';
+            fileSize.textContent = '';
+            uploadPreview.style.display = 'none';
+        }
+        
+        function hideFileError() {
+            fileError.style.display = 'none';
+            dropArea.classList.remove('error');
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        }
+        
+        async function convertSVG() {
+            if (!currentFile) return;
+            
+            // Show processing status
+            statusContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            convertBtn.disabled = true;
+            
+            try {
+                // Read the file
+                const fileContent = await readFile(currentFile);
                 
-                try {
-                    const svgContent = await readFileAsText(currentFile);
-                    const processedSvg = processSvg(svgContent);
-                    
-                    // Create download
-                    const blob = new Blob([processedSvg], { type: 'image/svg+xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = currentFile.name.replace('.svg', '') + '_ai.svg';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                } catch (error) {
-                    console.error('Error processing SVG:', error);
-                    alert('An error occurred while processing the SVG file.');
-                }
-            });
-            
-            function readFileAsText(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result);
-                    reader.onerror = e => reject(reader.error);
-                    reader.readAsText(file);
-                });
-            }
-            
-            function processSvg(svgContent) {
-                // Parse the SVG
+                // Update status
+                statusText.textContent = "Processing SVG structure...";
+                progressBar.style.width = '25%';
+                await delay(300);
+                
+                // Parse SVG
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-                const svg = doc.querySelector('svg');
+                const doc = parser.parseFromString(fileContent, 'image/svg+xml');
+                const svgElement = doc.querySelector('svg');
                 
-                if (!svg) {
+                if (!svgElement) {
                     throw new Error('No SVG element found in the file');
                 }
                 
-                // Remove unnecessary attributes
-                svg.removeAttribute('version');
-                svg.removeAttribute('id');
-                svg.removeAttribute('width');
-                svg.removeAttribute('height');
-                svg.removeAttribute('xmlns:svg');
-                
-                // Add style element
-                const style = doc.createElement('style');
-                style.textContent = `
-                    .cls-1 {
-                        fill:blue;
+                // Get or calculate viewBox
+                let vb = viewbox.value.trim();
+                if (!vb) {
+                    vb = svgElement.getAttribute('viewBox');
+                    if (!vb) {
+                        const width = svgElement.getAttribute('width') || '100';
+                        const height = svgElement.getAttribute('height') || '100';
+                        vb = `0 0 ${width} ${height}`;
                     }
-                `;
+                }
                 
-                const defs = doc.createElement('defs');
-                defs.appendChild(style);
-                svg.insertBefore(defs, svg.firstChild);
+                // Update status
+                statusText.textContent = "Applying Illustrator formatting...";
+                progressBar.style.width = '50%';
+                await delay(300);
                 
-                // Process paths
-                const paths = svg.querySelectorAll('path');
-                paths.forEach(path => {
-                    // Remove inline style
-                    path.removeAttribute('style');
-                    
-                    // Add class
-                    path.setAttribute('class', 'cls-1');
-                });
+                // Process paths based on color mode
+                const paths = svgElement.querySelectorAll('path');
+                let styleContent = '';
                 
-                // Process groups
-                const groups = svg.querySelectorAll('g');
-                groups.forEach(group => {
-                    // Remove inline style
-                    group.removeAttribute('style');
-                    
-                    // Add id if needed
-                    if (!group.id) {
-                        group.id = 'layer1';
-                    }
-                });
+                switch (colorMode.value) {
+                    case 'preserve':
+                        // Preserve original colors but add Illustrator-style classes
+                        styleContent = `
+    <style type="text/css">
+        .st0 { fill: inherit; stroke: #000000; stroke-width: 0.5; stroke-miterlimit: 10; }
+        .st1 { fill: none; stroke: #000000; stroke-width: 0.5; stroke-miterlimit: 10; }
+    </style>`;
+                        paths.forEach((path, index) => {
+                            path.setAttribute('class', `st${index % 2}`);
+                        });
+                        break;
+                        
+                    case 'replace':
+                        // Replace fill color with selected color
+                        styleContent = `
+    <style type="text/css">
+        .st0 { fill: ${fillColor.value}; stroke: #000000; stroke-width: 0.5; stroke-miterlimit: 10; }
+        .st1 { fill: none; stroke: #000000; stroke-width: 0.5; stroke-miterlimit: 10; }
+    </style>`;
+                        paths.forEach((path, index) => {
+                            path.setAttribute('class', `st${index % 2}`);
+                            path.removeAttribute('fill');
+                        });
+                        break;
+                        
+                    case 'custom':
+                        // Apply custom styling
+                        styleContent = `
+    <style type="text/css">
+        .st0 { 
+            fill: ${fillColor.value}; 
+            stroke: ${strokeColor.value}; 
+            stroke-width: ${strokeWidth.value || '0.5'}; 
+            stroke-miterlimit: ${strokeMiterlimit.value || '10'}; 
+        }
+        .st1 { 
+            fill: none; 
+            stroke: ${strokeColor.value}; 
+            stroke-width: ${strokeWidth.value || '0.5'}; 
+            stroke-miterlimit: ${strokeMiterlimit.value || '10'}; 
+        }
+    </style>`;
+                        paths.forEach((path, index) => {
+                            path.setAttribute('class', `st${index % 2}`);
+                            path.removeAttribute('fill');
+                            path.removeAttribute('stroke');
+                            path.removeAttribute('stroke-width');
+                            path.removeAttribute('stroke-miterlimit');
+                        });
+                        break;
+                }
                 
-                // Remove image element if present
-                const images = svg.querySelectorAll('image');
-                images.forEach(img => img.remove());
+                // Update status
+                statusText.textContent = "Finalizing output...";
+                progressBar.style.width = '75%';
+                await delay(300);
                 
-                // Serialize back to string
-                const serializer = new XMLSerializer();
-                return serializer.serializeToString(svg);
+                // Get inner SVG content
+                let innerSVG = svgElement.innerHTML;
+                
+                // Round numbers to specified precision
+                if (precision.value > 0) {
+                    const precisionValue = parseInt(precision.value);
+                    innerSVG = innerSVG.replace(/(\d+\.\d+)/g, match => {
+                        return parseFloat(match).toFixed(precisionValue);
+                    });
+                }
+                
+                // Create the final SVG with Illustrator-style formatting
+                const processedSVG = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator SVG Converter -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="${svgId.value || 'Layer_1'}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     viewBox="${vb}" style="enable-background:new ${vb};" xml:space="preserve">
+${styleContent}
+${innerSVG}
+</svg>`;
+                
+                // Update status
+                statusText.textContent = "Conversion complete!";
+                progressBar.style.width = '100%';
+                await delay(300);
+                
+                // Create download link
+                const blob = new Blob([processedSVG], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                
+                // Show result
+                svgPreview.src = url;
+                downloadBtn.href = url;
+                downloadBtn.download = `illustrator_${currentFile.name}`;
+                resultContainer.style.display = 'block';
+                statusContainer.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                statusText.textContent = `Error: ${error.message}`;
+                progressBar.style.backgroundColor = '#ED4245';
+                convertBtn.disabled = false;
             }
-        });
+        }
+        
+        function readFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
     </script>
 </body>
 </html>
