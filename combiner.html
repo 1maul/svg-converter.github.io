@@ -1,0 +1,189 @@
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        max-width: 1250px;
+        margin: auto;
+        margin-top: 1em;
+        --fontfam: 'Helvetica', sans-serif;
+        font-family: var(--fontfam);
+        --accent-color: lightgrey;
+      }
+      h1 {
+        text-align: center;
+        margin: 0 1em;
+      }
+      #flex {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap-reverse;
+      }
+      #controls {
+        margin: 1em;
+      }
+      #image-preview {
+        margin: 1em;
+        border: 1px dotted var(--accent-color);
+        position: relative;
+        width: 380px;
+        height: 600px;
+      }
+      #image-preview svg,
+      #image-preview img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      label {
+        display: block;
+        margin-top: 1em;
+      }
+      input {
+        display: block;
+        margin-bottom: 2em;
+        font-family: var(--fontfam);
+      }
+      #download {
+        border: 2px solid var(--accent-color);
+        padding: 1em;
+        border-radius: 32px;
+        text-decoration: none;
+        color: black;
+        display: block;
+        width: fit-content;
+        cursor: pointer;
+      }
+      #download:hover {
+        background-color: var(--accent-color);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SVG-PNG Combined Item Maker</h1>
+    <div id="flex">
+      <div id="controls">
+        <p>
+          Add an SVG file and a PNG file - the PNG will layer on top of the SVG.
+          This tool does not:
+        </p>
+        <ul>
+          <li>
+            Check that the SVG is valid. You can do so by uploading it into the
+            <a
+              href="https://www.reddit.com/avatar/creator-tools"
+              target="_blank"
+              >Creator Portal.</a
+            >
+          </li>
+          <li>
+            Resize your PNG. If your resulting image is too big, try again with
+            a smaller PNG.
+          </li>
+        </ul>
+        <label>
+          SVG File
+          <input type="file" accept=".svg" id="svg-input" />
+        </label>
+        <label>
+          PNG File
+          <input type="file" accept=".png" id="png-input" />
+        </label>
+
+        <a onclick="downloadImage(this)" id="download"> Download Image </a>
+      </div>
+
+      <div id="image-preview">
+        <svg viewBox="0 0 380 600" id="placeholder-delete">
+          <text x="50%" y="50%" text-anchor="middle">
+            Your image will display here.
+          </text>
+        </svg>
+      </div>
+    </div>
+
+    <script>
+      const dimensions = { width: 380, height: 600 };
+      const container = document.getElementById('image-preview');
+
+      function handleUploadSVG(data) {
+        container.querySelectorAll('svg').forEach(node => node.remove());
+        const template = document.createElement('template');
+        template.innerHTML = data;
+        const svgElement = template.content.firstElementChild;
+        container.insertBefore(svgElement, container.firstChild);
+      }
+
+      function handleUploadPNG(data) {
+        container.querySelectorAll('img').forEach(node => node.remove());
+        const img = new Image();
+        img.onload = function (e) {
+          if (
+            e.target.width / dimensions.width !==
+            e.target.height / dimensions.height
+          ) {
+            alert('Your PNG file is not the correct aspect ratio.');
+            return;
+          }
+          container.querySelector('#placeholder-delete')?.remove();
+          container.appendChild(img);
+        };
+        img.src = data;
+      }
+
+      function downloadImage(anchor) {
+        const { width, height } = dimensions;
+        container.querySelector('#placeholder-delete')?.remove();
+        let svgElement = container.querySelector('svg');
+        if (!svgElement) {
+          svgElement = document.createElement('svg');
+          svgElement.setAttribute('viewbox', `0 0 ${width} ${height}`);
+          svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        const imgElement = container.querySelector('img');
+        if (imgElement) {
+          const imageEl = document.createElement('image');
+          imageEl.setAttribute('href', imgElement.src);
+          imageEl.setAttribute('width', `${width}px`);
+          imageEl.setAttribute('height', `${height}px`);
+          imageEl.setAttribute('x', 0);
+          imageEl.setAttribute('y', 0);
+          svgElement.appendChild(imageEl);
+        }
+
+        const svg_blob = new Blob([svgElement.outerHTML], {
+          type: 'image/svg+xml',
+        });
+        const url = URL.createObjectURL(svg_blob);
+
+        anchor.href = url;
+        const svgName =
+          document.getElementById('svg-input').files?.[0]?.name ||
+          'avatar-image.svg';
+        anchor.download = 'combined-' + svgName;
+      }
+
+      document.getElementById('svg-input').addEventListener('change', e => {
+        if (!e.target.files?.[0]) return;
+        const reader = new FileReader();
+        reader.onload = r => {
+          handleUploadSVG(r.target.result);
+        };
+        reader.readAsText(e.target.files[0]);
+      });
+
+      document.getElementById('png-input').addEventListener('change', e => {
+        if (!e.target.files?.[0]) return;
+        const reader = new FileReader();
+        reader.onload = r => {
+          handleUploadPNG(r.target.result);
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      });
+    </script>
+    <p><a href="index.html">← Back to Converter</a></p>
+  </body>
+</html>
