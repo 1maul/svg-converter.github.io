@@ -223,7 +223,43 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             });
-            
+            function modifySvg(svgContent) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    
+    if (!svg) {
+        throw new Error('No SVG element found in the input');
+    }
+
+    // Get all paths while preserving their original attributes
+    const paths = Array.from(doc.querySelectorAll('path'));
+    if (paths.length === 0) {
+        throw new Error('No path elements found in the SVG');
+    }
+
+    // Create the modified SVG structure
+    let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 380 600">
+
+<g id="Layer_1">\n`;
+    
+    // Add all paths with their original attributes
+    paths.forEach(path => {
+        const d = path.getAttribute('d');
+        const fill = path.getAttribute('fill') || 'inherit'; // Preserve fill or default to inherit
+        const stroke = path.getAttribute('stroke') || 'none'; // Preserve stroke
+        const strokeWidth = path.getAttribute('stroke-width') || '0';
+        
+        modifiedSvg += `    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>\n`;
+    });
+    
+    modifiedSvg += `</g>\n\n</svg>`;
+    
+    return modifiedSvg;
+}
     
     </script>
 </body>
