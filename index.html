@@ -177,56 +177,69 @@
                 URL.revokeObjectURL(url);
             });
             
-            // Function to modify SVG while preserving original colors
-            function modifySvg(svgContent) {
-                // Parse the SVG
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-                const svg = doc.querySelector('svg');
-                
-                if (!svg) {
-                    throw new Error('No SVG element found in the input');
-                }
-                
-                // Extract all path elements with their attributes
-                const paths = Array.from(doc.querySelectorAll('path'));
-                if (paths.length === 0) {
-                    throw new Error('No path elements found in the SVG');
-                }
-                
-                // Get original viewBox or use default
-                const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
-                
-                // Create the modified SVG structure
-                let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
+            // Replace your existing modifySvg() function with this one
+function modifySvg(svgContent) {
+    // Parse the SVG
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    
+    if (!svg) {
+        throw new Error('No SVG element found in the input');
+    }
+
+    // Get original viewBox or use default
+    const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
+
+    // Extract all style information
+    const styles = Array.from(doc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
+    
+    // Extract all path elements with their original attributes
+    const paths = Array.from(doc.querySelectorAll('path'));
+    if (paths.length === 0) {
+        throw new Error('No path elements found in the SVG');
+    }
+
+    // Create the modified SVG structure
+    let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator -->
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="${viewBox}">
 
+<style>
+    ${styles}
+</style>
+
 <g id="Layer_1">\n`;
-                
-                // Add all paths with their original attributes
-                paths.forEach(path => {
-                    const d = path.getAttribute('d') || '';
-                    const fill = path.getAttribute('fill') || 'inherit';
-                    const stroke = path.getAttribute('stroke') || 'none';
-                    const strokeWidth = path.getAttribute('stroke-width') || '0';
-                    const opacity = path.getAttribute('opacity') || '1';
-                    const transform = path.getAttribute('transform') || '';
-                    
-                    modifiedSvg += `    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"`;
-                    
-                    if (transform) {
-                        modifiedSvg += ` transform="${transform}"`;
-                    }
-                    
-                    modifiedSvg += `/>\n`;
-                });
-                
-                modifiedSvg += `</g>\n\n</svg>`;
-                
-                return modifiedSvg;
-            }
+    
+    // Add all paths with their original attributes
+    paths.forEach(path => {
+        // Get all original attributes
+        const attributes = {};
+        for (const attr of path.attributes) {
+            attributes[attr.name] = attr.value;
+        }
+        
+        // Ensure required attributes exist
+        if (!attributes.fill && !attributes.class) {
+            attributes.fill = 'currentColor'; // Default to inheriting color
+        }
+        
+        // Build the path tag with all original attributes
+        let pathTag = '    <path';
+        for (const [name, value] of Object.entries(attributes)) {
+            pathTag += ` ${name}="${value}"`;
+        }
+        pathTag += `/>\n`;
+        
+        modifiedSvg += pathTag;
+    });
+    
+    modifiedSvg += `</g>\n\n</svg>`;
+    
+    return modifiedSvg;
+}
+
         });
     </script>
 </body>
