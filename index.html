@@ -123,21 +123,7 @@
             <textarea id="inputSvg" placeholder="Paste your SVG code here or upload a file..."></textarea>
         </div>
         
-        <div class="color-options">
-            <h3>Select Color:</h3>
-            <div class="color-option" data-color="st0">
-                <div class="color-box st0-color"></div>
-                <span>Yellow (.st0)</span>
-            </div>
-            <div class="color-option" data-color="st1">
-                <div class="color-box st1-color"></div>
-                <span>Green (.st1)</span>
-            </div>
-            <div class="color-option" data-color="st2">
-                <div class="color-box st2-color"></div>
-                <span>Blue (.st2)</span>
-            </div>
-        </div>
+       
         
         <button id="modifyBtn">Modify SVG</button>
         
@@ -203,7 +189,7 @@
                 }
                 
                 try {
-                    const modified = modifySvg(input, selectedColorClass);
+                    const modified = modifySvg(input);
                     outputSvg.value = modified;
                     svgPreview.innerHTML = modified;
                 } catch (e) {
@@ -238,50 +224,7 @@
                 URL.revokeObjectURL(url);
             });
             
-            // Function to modify SVG
-            function modifySvg(svgContent, colorClass) {
-                // Parse the SVG (simple approach - for more complex SVG you might want to use DOMParser)
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-                const svg = doc.querySelector('svg');
-                
-                if (!svg) {
-                    throw new Error('No SVG element found in the input');
-                }
-                
-                // Extract all path elements
-                const paths = Array.from(doc.querySelectorAll('path'));
-                if (paths.length === 0) {
-                    throw new Error('No path elements found in the SVG');
-                }
-                
-                // Create the modified SVG structure
-                let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator -->
-<svg  xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 380 600"  >
-
-<style>
-    .st0{fill:#FFFF00}
-    .st1{fill:#00FF00}
-    .st2{fill:#0000FF}
-</style>
-
-<g id="Layer_1">\n`;
-                
-                // Add all paths with the selected color class
-                paths.forEach(path => {
-                    const d = path.getAttribute('d');
-                    if (d) {
-                        modifiedSvg += `    <path class="${colorClass}" d="${d}"/>\n`;
-                    }
-                });
-                
-                modifiedSvg += `</g>\n\n</svg>`;
-                
-                return modifiedSvg;
-            }
-        });
+    
     </script>
 </body>
 </html>
