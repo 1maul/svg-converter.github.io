@@ -1,18 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Standard favicon (works everywhere) -->
-<link rel="icon" href="favicon.ico" type="image/x-icon" sizes="any">
-
-<!-- Modern SVG favicon (sharp on HiDPI screens) -->
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-
-<!-- Apple Touch Icon (for iOS homescreen) -->
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-<!-- 32×32 PNG fallback -->
-<link rel="icon" href="favicon-32x32.png" type="image/png">
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG File Modifier</title>
@@ -73,46 +61,31 @@
             padding: 10px 15px;
             margin-bottom: 20px;
         }
-        .color-options {
-            margin: 15px 0;
-            display: flex;
-            gap: 15px;
-            align-items: center;
+        nav {
+            text-align: center;
+            margin-bottom: 20px;
         }
-        .color-option {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
+        nav a {
+            color: #4CAF50;
+            text-decoration: none;
+            margin: 0 10px;
         }
-        .color-box {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-            border: 1px solid #ccc;
+        nav a:hover {
+            text-decoration: underline;
         }
-        .st0-color { background-color: #FFFF00; }
-        .st1-color { background-color: #00FF00; }
-        .st2-color { background-color: #0000FF; }
     </style>
 </head>
 <body>
-    <nav style="text-align: center; margin-bottom: 20px;">
-    <a href="index.html">SVG Converter</a> | 
-    <a href="combiner.html">Combiner</a>
-</nav>
     <div class="container">
+        <nav>
+            <a href="index.html">SVG Converter</a>
+            <a href="about.html">About</a>
+        </nav>
+        
         <h1>SVG File Modifier</h1>
         
         <div class="instructions">
-            <p>This tool modifies SVG files to match the structure of the provided template. Upload an SVG file or paste its content below, then click "Modify SVG" to transform it.</p>
-            <p>The modified SVG will:</p>
-            <ul>
-                <li>Use the same XML declaration and namespace</li>
-                <li>Apply the same viewBox dimensions (0 0 380 600)</li>
-                <li>Include the same style definition with color classes</li>
-                <li>Wrap all paths in a &lt;g id="Layer_1"&gt; element</li>
-                <li>Preserve all original path data but apply the selected color class</li>
-            </ul>
+            <p>This tool modifies SVG files while preserving their original colors. Upload an SVG file or paste its content below, then click "Modify SVG" to standardize its structure.</p>
         </div>
         
         <div class="input-section">
@@ -122,8 +95,6 @@
             </div>
             <textarea id="inputSvg" placeholder="Paste your SVG code here or upload a file..."></textarea>
         </div>
-        
-       
         
         <button id="modifyBtn">Modify SVG</button>
         
@@ -149,24 +120,6 @@
             const downloadBtn = document.getElementById('downloadBtn');
             const svgUpload = document.getElementById('svgUpload');
             const svgPreview = document.getElementById('svgPreview');
-            const colorOptions = document.querySelectorAll('.color-option');
-            
-            let selectedColorClass = 'st0'; // Default selection
-            
-            // Handle color selection
-            colorOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove selected class from all options
-                    colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    // Add selected class to clicked option
-                    this.classList.add('selected');
-                    // Update selected color class
-                    selectedColorClass = this.getAttribute('data-color');
-                });
-            });
-            
-            // Set default selection
-            colorOptions[0].classList.add('selected');
             
             // Handle file upload
             svgUpload.addEventListener('change', function(e) {
@@ -223,44 +176,58 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             });
+            
+            // Function to modify SVG while preserving original colors
             function modifySvg(svgContent) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    const svg = doc.querySelector('svg');
-    
-    if (!svg) {
-        throw new Error('No SVG element found in the input');
-    }
-
-    // Get all paths while preserving their original attributes
-    const paths = Array.from(doc.querySelectorAll('path'));
-    if (paths.length === 0) {
-        throw new Error('No path elements found in the SVG');
-    }
-
-    // Create the modified SVG structure
-    let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
+                // Parse the SVG
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+                const svg = doc.querySelector('svg');
+                
+                if (!svg) {
+                    throw new Error('No SVG element found in the input');
+                }
+                
+                // Extract all path elements with their attributes
+                const paths = Array.from(doc.querySelectorAll('path'));
+                if (paths.length === 0) {
+                    throw new Error('No path elements found in the SVG');
+                }
+                
+                // Get original viewBox or use default
+                const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
+                
+                // Create the modified SVG structure
+                let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator -->
 <svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 380 600">
+     viewBox="${viewBox}">
 
 <g id="Layer_1">\n`;
-    
-    // Add all paths with their original attributes
-    paths.forEach(path => {
-        const d = path.getAttribute('d');
-        const fill = path.getAttribute('fill') || 'inherit'; // Preserve fill or default to inherit
-        const stroke = path.getAttribute('stroke') || 'none'; // Preserve stroke
-        const strokeWidth = path.getAttribute('stroke-width') || '0';
-        
-        modifiedSvg += `    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>\n`;
-    });
-    
-    modifiedSvg += `</g>\n\n</svg>`;
-    
-    return modifiedSvg;
-}
-    
+                
+                // Add all paths with their original attributes
+                paths.forEach(path => {
+                    const d = path.getAttribute('d') || '';
+                    const fill = path.getAttribute('fill') || 'inherit';
+                    const stroke = path.getAttribute('stroke') || 'none';
+                    const strokeWidth = path.getAttribute('stroke-width') || '0';
+                    const opacity = path.getAttribute('opacity') || '1';
+                    const transform = path.getAttribute('transform') || '';
+                    
+                    modifiedSvg += `    <path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"`;
+                    
+                    if (transform) {
+                        modifiedSvg += ` transform="${transform}"`;
+                    }
+                    
+                    modifiedSvg += `/>\n`;
+                });
+                
+                modifiedSvg += `</g>\n\n</svg>`;
+                
+                return modifiedSvg;
+            }
+        });
     </script>
 </body>
 </html>
