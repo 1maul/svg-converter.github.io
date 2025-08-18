@@ -111,7 +111,7 @@
         </div>
     </div>
 
-     <script>
+   <script>
         document.addEventListener('DOMContentLoaded', function() {
             // (Keep all your existing DOM element references and event listeners here)
 
@@ -140,18 +140,75 @@
                         colorFrequency[fill] = (colorFrequency[fill] || 0) + 1;
                     }
                 });
-
-                // Determine the most common color or default to blue
-                let detectedColor = 'blue';
-                let maxCount = 0;
-                for (const [color, count] of Object.entries(colorFrequency)) {
-                    if (count > maxCount) {
-                        detectedColor = color;
-                        maxCount = count;
-                    }
+            
+            // Modify SVG button click handler
+            modifyBtn.addEventListener('click', function() {
+                const input = inputSvg.value.trim();
+                if (!input) {
+                    alert('Please provide SVG content first');
+                    return;
                 }
+                
+                try {
+                    const modified = modifySvg(input);
+                    outputSvg.value = modified;
+                    svgPreview.innerHTML = modified;
+                } catch (e) {
+                    alert('Error processing SVG: ' + e.message);
+                    console.error(e);
+                }
+            });
+            
+            // Copy to clipboard button
+            copyBtn.addEventListener('click', function() {
+                outputSvg.select();
+                document.execCommand('copy');
+                alert('Copied to clipboard!');
+            });
+            
+            // Download button
+            downloadBtn.addEventListener('click', function() {
+                const content = outputSvg.value;
+                if (!content) {
+                    alert('No modified SVG to download');
+                    return;
+                }
+                
+                const blob = new Blob([content], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'modified.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            // Replace your existing modifySvg() function with this one
+function modifySvg(svgContent) {
+    // Parse the SVG
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    
+    if (!svg) {
+        throw new Error('No SVG element found in the input');
+    }
 
-                // Create the modified SVG structure
+    // Get original viewBox or use default
+    const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
+
+    // Extract all style information
+    const styles = Array.from(doc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
+    
+    // Extract all path elements with their original attributes
+    const paths = Array.from(doc.querySelectorAll('path'));
+    if (paths.length === 0) {
+        throw new Error('No path elements found in the SVG');
+    }
+
+ // Create the modified SVG structure
                 let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator -->
 <svg xmlns="http://www.w3.org/2000/svg"
@@ -166,8 +223,8 @@
 </defs>
 
 <g id="Layer_1">\n`;
-                
-                // Add all paths with the cls-1 class
+    
+     // Add all paths with the cls-1 class
                 paths.forEach(path => {
                     const d = path.getAttribute('d');
                     if (d) {
