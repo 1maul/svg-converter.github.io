@@ -115,16 +115,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             // (Keep all your existing DOM element references and event listeners here)
 
-            // Modified modifySvg function with automatic color detection
-            function modifySvg(svgContent) {
-                // Parse the SVG
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-                const svg = doc.querySelector('svg');
-                
-                if (!svg) {
-                    throw new Error('No SVG element found in the input');
-                }
+            // Replace your existing modifySvg() function with this one
+function modifySvg(svgContent) {
+    // Parse the SVG
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    
+    if (!svg) {
+        throw new Error('No SVG element found in the input');
+    }
 
                 // Extract all path elements
                 const paths = Array.from(doc.querySelectorAll('path'));
@@ -185,16 +185,7 @@
                 URL.revokeObjectURL(url);
             });
             
-            // Replace your existing modifySvg() function with this one
-function modifySvg(svgContent) {
-    // Parse the SVG
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    const svg = doc.querySelector('svg');
-    
-    if (!svg) {
-        throw new Error('No SVG element found in the input');
-    }
+            
 
     // Get original viewBox or use default
     const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
