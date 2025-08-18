@@ -1,234 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG File Modifier</title>
+    <title>Reddit-Compatible SVG Converter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
+            max-width: 1250px;
+            margin: auto;
+            margin-top: 1em;
+            font-family: 'Helvetica', sans-serif;
+            --accent-color: lightgrey;
         }
         h1 {
-            color: #333;
             text-align: center;
         }
-        .container {
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        #flex {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
         }
-        .input-section, .output-section {
-            margin-bottom: 20px;
+        #controls {
+            margin: 1em;
+            flex: 1;
+            min-width: 300px;
         }
-        textarea {
+        #preview {
+            margin: 1em;
+            border: 1px dotted var(--accent-color);
+            width: 380px;
+            height: 600px;
+        }
+        #output {
             width: 100%;
-            height: 200px;
+            height: 300px;
             font-family: monospace;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            margin-top: 1em;
+        }
+        label {
+            display: block;
+            margin-top: 1em;
+        }
+        input, button {
+            display: block;
+            margin-bottom: 1em;
         }
         button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
+            padding: 0.5em 1em;
+            background: white;
+            border: 2px solid var(--accent-color);
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
         }
         button:hover {
-            background-color: #45a049;
-        }
-        .file-input {
-            margin-bottom: 15px;
-        }
-        .preview {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: white;
-        }
-        .instructions {
-            background-color: #e7f3fe;
-            border-left: 6px solid #2196F3;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-        }
-        nav {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        nav a {
-            color: #4CAF50;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        nav a:hover {
-            text-decoration: underline;
+            background-color: var(--accent-color);
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    
+<div class="container">
         <nav>
             <a href="index.html">SVG Converter</a>
             <a href="about.html">About</a>
         </nav>
-        
-        <h1>SVG File Modifier</h1>
-        
-        <div class="instructions">
-            <p>This tool modifies SVG files while preserving their original colors. Upload an SVG file or paste its content below, then click "Modify SVG" to standardize its structure.</p>
+    
+    <h1>Reddit-Compatible SVG Converter</h1>
+    <div id="flex">
+        <div id="controls">
+            <p>Upload an SVG file to convert it for Reddit's Creator Portal:</p>
+            <ul>
+                <li>Converts all colors to hex format</li>
+                <li>Maintains proper SVG structure</li>
+                <li>Removes unsupported functions</li>
+            </ul>
+            
+            <label>
+                SVG File to Convert:
+                <input type="file" id="svg-input" accept=".svg" />
+            </label>
+            
+            <button id="convert-btn">Convert SVG</button>
+            <button id="download-btn">Download Converted SVG</button>
+            
+            <label>
+                Converted SVG Output:
+                <textarea id="output" readonly></textarea>
+            </label>
         </div>
         
-        <div class="input-section">
-            <h2>Input SVG</h2>
-            <div class="file-input">
-                <input type="file" id="svgUpload" accept=".svg">
-            </div>
-            <textarea id="inputSvg" placeholder="Paste your SVG code here or upload a file..."></textarea>
-        </div>
-        
-        <button id="modifyBtn">Modify SVG</button>
-        
-        <div class="output-section">
-            <h2>Modified SVG</h2>
-            <textarea id="outputSvg" readonly></textarea>
-            <button id="copyBtn">Copy to Clipboard</button>
-            <button id="downloadBtn">Download SVG</button>
-        </div>
-        
-        <div class="preview">
-            <h2>Preview</h2>
-            <div id="svgPreview"></div>
+        <div>
+            <div id="preview"></div>
+            <p>Preview will appear here</p>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputSvg = document.getElementById('inputSvg');
-            const outputSvg = document.getElementById('outputSvg');
-            const modifyBtn = document.getElementById('modifyBtn');
-            const copyBtn = document.getElementById('copyBtn');
-            const downloadBtn = document.getElementById('downloadBtn');
-            const svgUpload = document.getElementById('svgUpload');
-            const svgPreview = document.getElementById('svgPreview');
+        const preview = document.getElementById('preview');
+        const output = document.getElementById('output');
+        let convertedSvg = '';
+        
+        // Function to convert any color format to hex
+        function colorToHex(color) {
+            // If already hex, return as-is
+            if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(color)) {
+                return color.toLowerCase();
+            }
             
-            // Handle file upload
-            svgUpload.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
+            // If rgb() format, convert to hex
+            if (/^rgb\(/.test(color)) {
+                const parts = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i);
+                if (parts) {
+                    const r = parseInt(parts[1]);
+                    const g = parseInt(parts[2]);
+                    const b = parseInt(parts[3]);
+                    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toLowerCase();
+                }
+            }
+            
+            // If rgba() format, warn and convert to rgb (Reddit doesn't support alpha)
+            if (/^rgba\(/.test(color)) {
+                console.warn("Alpha channel not supported - converting to solid color");
+                const parts = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/i);
+                if (parts) {
+                    const r = parseInt(parts[1]);
+                    const g = parseInt(parts[2]);
+                    const b = parseInt(parts[3]);
+                    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toLowerCase();
+                }
+            }
+            
+            // If named color, convert to hex
+            const colors = {
+                "black": "#000000",
+                "white": "#ffffff",
+                "red": "#ff0000",
+                // Add more named colors as needed
+            };
+            if (colors[color.toLowerCase()]) {
+                return colors[color.toLowerCase()];
+            }
+            
+            // Default fallback (will be filtered out)
+            console.warn(`Unrecognized color format: ${color}`);
+            return null;
+        }
+        
+        document.getElementById('svg-input').addEventListener('change', function(e) {
+            if (!e.target.files?.[0]) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(r) {
+                // Parse the SVG
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(r.target.result, 'image/svg+xml');
+                const svgElement = svgDoc.querySelector('svg');
                 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    inputSvg.value = e.target.result;
-                };
-                reader.readAsText(file);
-            });
-            
-            // Modify SVG button click handler
-            modifyBtn.addEventListener('click', function() {
-                const input = inputSvg.value.trim();
-                if (!input) {
-                    alert('Please provide SVG content first');
+                if (!svgElement) {
+                    alert('No SVG found in the uploaded file');
                     return;
                 }
                 
-                try {
-                    const modified = modifySvg(input);
-                    outputSvg.value = modified;
-                    svgPreview.innerHTML = modified;
-                } catch (e) {
-                    alert('Error processing SVG: ' + e.message);
-                    console.error(e);
-                }
-            });
-            
-            // Copy to clipboard button
-            copyBtn.addEventListener('click', function() {
-                outputSvg.select();
-                document.execCommand('copy');
-                alert('Copied to clipboard!');
-            });
-            
-            // Download button
-            downloadBtn.addEventListener('click', function() {
-                const content = outputSvg.value;
-                if (!content) {
-                    alert('No modified SVG to download');
+                // Extract all paths
+                const paths = svgElement.querySelectorAll('path');
+                if (paths.length === 0) {
+                    alert('No paths found in the SVG');
                     return;
                 }
                 
-                const blob = new Blob([content], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'modified.svg';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            
-            // Replace your existing modifySvg() function with this one
-function modifySvg(svgContent) {
-    // Parse the SVG
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, 'image/svg+xml');
-    const svg = doc.querySelector('svg');
-    
-    if (!svg) {
-        throw new Error('No SVG element found in the input');
-    }
-
-    // Get original viewBox or use default
-    const viewBox = svg.getAttribute('viewBox') || '0 0 380 600';
-
-    // Extract all style information
-    const styles = Array.from(doc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
-    
-    // Extract all path elements with their original attributes
-    const paths = Array.from(doc.querySelectorAll('path'));
-    if (paths.length === 0) {
-        throw new Error('No path elements found in the SVG');
-    }
-
-    // Create the modified SVG structure
-    let modifiedSvg = `<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator -->
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="${viewBox}">
-
-<defs>
-    <style>
-      .cls-1 {
-        fill:blue;
-      }
-    </style>
-  </defs>
-
-<g id="Layer_1">\n`;
-    
-    / // Add all paths with the cls-1 class
+                // Collect all unique fill colors and convert to hex
+                const fillColors = new Set();
                 paths.forEach(path => {
-                    const d = path.getAttribute('d');
-                    if (d) {
-                        // Remove any fill attributes and add cls-1 class
-                        modifiedSvg += `    <path class="cls-1" d="${d}"/>\n`;
+                    let fill = path.getAttribute('fill') || path.style.fill || '';
+                    if (fill) {
+                        const hexColor = colorToHex(fill);
+                        if (hexColor) fillColors.add(hexColor);
                     }
                 });
                 
-                modifiedSvg += `</g>\n\n</svg>`;
+                // Create CSS classes for each color
+                let styleText = '';
+                let i = 1;
+                fillColors.forEach(color => {
+                    styleText += `      .cls-${i} {\n        fill: ${color};\n      }\n`;
+                    i++;
+                });
                 
-                return modifiedSvg;
+                // Create the exact XML structure from your example
+                let newSvg = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="${svgElement.getAttribute('viewBox') || '0 0 380 600'}">
+
+<defs>
+    <style>
+${styleText}    </style>
+  </defs>
+
+<g id="Layer_1">\n`;
+                
+                // Create mapping of colors to class names
+                const colorToClass = {};
+                i = 1;
+                fillColors.forEach(color => {
+                    colorToClass[color] = `cls-${i}`;
+                    i++;
+                });
+                
+                // Add each path with the exact structure from your example
+                paths.forEach((path, index) => {
+                    const pathData = path.getAttribute('d') || '';
+                    let fill = path.getAttribute('fill') || path.style.fill || '';
+                    fill = fill ? colorToHex(fill) : '';
+                    const className = fill ? colorToClass[fill] : 'cls-1';
+                    
+                    newSvg += `    <path class="${className}" d="${pathData}" id="path${index + 1}"/>\n`;
+                });
+                
+                // Close the SVG
+                newSvg += `</g>
+
+</svg>`;
+                
+                convertedSvg = newSvg;
+                output.value = convertedSvg;
+                preview.innerHTML = convertedSvg;
+            };
+            reader.readAsText(e.target.files[0]);
+        });
+        
+        document.getElementById('convert-btn').addEventListener('click', function() {
+            if (!convertedSvg) {
+                alert('Please upload an SVG file first');
+                return;
             }
+            preview.innerHTML = convertedSvg;
+        });
+        
+        document.getElementById('download-btn').addEventListener('click', function() {
+            if (!convertedSvg) {
+                alert('No converted SVG available');
+                return;
+            }
+            
+            const blob = new Blob([convertedSvg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reddit-ready-' + (document.getElementById('svg-input').files[0]?.name || 'output.svg');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
     </script>
 </body>
