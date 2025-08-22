@@ -57,21 +57,14 @@
     </style>
 </head>
 <body>
-    
-<div class="container">
-        <nav>
-            <a href="index.html">SVG Converter</a>
-            <a href="combiner.html">combiner</a>
-        </nav>
-    
-    <h1>Reddit-Compatible SVG Converter</h1>
+    <h1>SVG Converter with Named Colors</h1>
     <div id="flex">
         <div id="controls">
-            <p>Upload an SVG file to convert it for Reddit's Creator Portal:</p>
+            <p>What's new!:</p>
             <ul>
-                <li>Converts all colors to hex format</li>
-                <li>Maintains proper SVG structure</li>
-                <li>Removes unsupported functions</li>
+                <li>Added support for Android Illustrator</li>
+                <li>Works perfectly with Inkscape</li>
+               
             </ul>
             
             <label>
@@ -79,13 +72,10 @@
                 <input type="file" id="svg-input" accept=".svg" />
             </label>
             
-            <button id="convert-btn">Convert SVG</button>
+            
             <button id="download-btn">Download Converted SVG</button>
             
-            <label>
-                Converted SVG Output:
-                <textarea id="output" readonly></textarea>
-            </label>
+            
         </div>
         
         <div>
@@ -99,49 +89,63 @@
         const output = document.getElementById('output');
         let convertedSvg = '';
         
-        // Function to convert any color format to hex
-        function colorToHex(color) {
-            // If already hex, return as-is
+        // Function to convert specific hex colors to named colors
+        function hexToNamedColor(hexColor) {
+            const colorMap = {
+                '#0000ff': 'blue',
+                '#ff0000': 'red',
+                '#00ff00': 'lime',
+                '#ffff00': 'yellow',
+                '#00ffff': 'cyan',
+                '#ff00ff': 'magenta',
+                '#000000': 'black',
+                '#ffffff': 'white',
+                '#808080': 'gray',
+                '#c0c0c0': 'silver',
+                '#800000': 'maroon',
+                '#808000': 'olive',
+                '#008000': 'green',
+                '#800080': 'purple',
+                '#008080': 'teal',
+                '#000080': 'navy'
+            };
+            
+            // Normalize hex color to lowercase for comparison
+            const normalizedHex = hexColor.toLowerCase();
+            return colorMap[normalizedHex] || hexColor;
+        }
+        
+        // Function to convert any color format to final format
+        function processColor(color) {
+            if (!color || color === 'none') return null;
+            
+            // If already hex, check if it should be converted to named color
             if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(color)) {
-                return color.toLowerCase();
+                return hexToNamedColor(color);
             }
             
-            // If rgb() format, convert to hex
+            // If rgb() format, convert to hex first, then check for named color
             if (/^rgb\(/.test(color)) {
                 const parts = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i);
                 if (parts) {
                     const r = parseInt(parts[1]);
                     const g = parseInt(parts[2]);
                     const b = parseInt(parts[3]);
-                    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toLowerCase();
+                    const hexColor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toLowerCase();
+                    return hexToNamedColor(hexColor);
                 }
             }
             
-            // If rgba() format, warn and convert to rgb (Reddit doesn't support alpha)
-            if (/^rgba\(/.test(color)) {
-                console.warn("Alpha channel not supported - converting to solid color");
-                const parts = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/i);
-                if (parts) {
-                    const r = parseInt(parts[1]);
-                    const g = parseInt(parts[2]);
-                    const b = parseInt(parts[3]);
-                    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toLowerCase();
-                }
+            // If named color, return as-is
+            const namedColors = [
+                'black', 'white', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta',
+                'silver', 'gray', 'maroon', 'olive', 'purple', 'teal', 'navy', 'orange',
+                'transparent'
+            ];
+            if (namedColors.includes(color.toLowerCase())) {
+                return color.toLowerCase();
             }
             
-            // If named color, convert to hex
-            const colors = {
-                "blue": "#0000FF",
-                "lime": "#00FF00",
-                "yello": "#FFFF00",
-                // Add more named colors as needed
-            };
-            if (colors[color.toLowerCase()]) {
-                return colors[color.toLowerCase()];
-            }
-            
-            // Default fallback (will be filtered out)
-            console.warn(`Unrecognized color format: ${color}`);
             return null;
         }
         
@@ -160,32 +164,73 @@
                     return;
                 }
                 
-                // Extract all paths
-                const paths = svgElement.querySelectorAll('path');
+                // Extract all paths and other shape elements
+                const paths = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
                 if (paths.length === 0) {
-                    alert('No paths found in the SVG');
+                    alert('No path elements found in the SVG');
                     return;
                 }
                 
-                // Collect all unique fill colors and convert to hex
+                // Collect all unique fill colors
                 const fillColors = new Set();
-                paths.forEach(path => {
-                    let fill = path.getAttribute('fill') || path.style.fill || '';
+                const colorMap = new Map();
+                
+                paths.forEach(element => {
+                    // Check for fill attribute
+                    let fill = element.getAttribute('fill');
+                    
+                    // Check for class-based fill
+                    if (!fill && element.hasAttribute('class')) {
+                        const className = element.getAttribute('class');
+                        const styleElement = svgDoc.querySelector(`style`);
+                        if (styleElement) {
+                            const styleText = styleElement.textContent;
+                            const regex = new RegExp(`\\.${className}\\s*\\{[^}]*fill:\\s*([^;\\}]+)[^}]*\\}`, 'i');
+                            const match = styleText.match(regex);
+                            if (match && match[1]) {
+                                fill = match[1].trim();
+                            }
+                        }
+                    }
+                    
+                    // Check for inline style
+                    if (!fill && element.hasAttribute('style')) {
+                        const style = element.getAttribute('style');
+                        const fillMatch = style.match(/fill:\s*([^;]+)/i);
+                        if (fillMatch && fillMatch[1]) {
+                            fill = fillMatch[1].trim();
+                        }
+                    }
+                    
                     if (fill) {
-                        const hexColor = colorToHex(fill);
-                        if (hexColor) fillColors.add(hexColor);
+                        const processedColor = processColor(fill);
+                        if (processedColor) {
+                            fillColors.add(processedColor);
+                            // Store original element and its processed color
+                            colorMap.set(element, processedColor);
+                        }
                     }
                 });
                 
                 // Create CSS classes for each color
                 let styleText = '';
                 let i = 1;
+                const colorToClassMap = new Map();
+                
                 fillColors.forEach(color => {
-                    styleText += `      .st${i} {\n        fill: ${color};\n      }\n`;
+                    const className = `cls-${i}`;
+                    styleText += `      .${className} {\n        fill: ${color};\n      }\n`;
+                    colorToClassMap.set(color, className);
                     i++;
                 });
                 
-                // Create the exact XML structure from your example
+                // If no colors found, create default empty class
+                if (fillColors.size === 0) {
+                    styleText += `      .cls-1 {\n        fill: ;\n      }\n`;
+                    colorToClassMap.set('', 'cls-1');
+                }
+                
+                // Create the exact XML structure
                 let newSvg = `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator -->
 <svg xmlns="http://www.w3.org/2000/svg"
@@ -198,22 +243,29 @@ ${styleText}    </style>
 
 <g id="Layer_1">\n`;
                 
-                // Create mapping of colors to class names
-                const colorToClass = {};
-                i = 1;
-                fillColors.forEach(color => {
-                    colorToClass[color] = `st${i}`;
-                    i++;
-                });
-                
-                // Add each path with the exact structure from your example
-                paths.forEach((path, index) => {
-                    const pathData = path.getAttribute('d') || '';
-                    let fill = path.getAttribute('fill') || path.style.fill || '';
-                    fill = fill ? colorToHex(fill) : '';
-                    const className = fill ? colorToClass[fill] : 'st';
+                // Add each path with the exact structure
+                paths.forEach((element, index) => {
+                    const elementType = element.tagName.toLowerCase();
+                    let attributes = '';
                     
-                    newSvg += `    <path class="${className}" d="${pathData}" id="path${index + 1}"/>\n`;
+                    // Handle different element types
+                    if (elementType === 'path') {
+                        attributes = ` d="${element.getAttribute('d') || ''}"`;
+                    } else if (elementType === 'rect') {
+                        attributes = ` x="${element.getAttribute('x') || 0}" y="${element.getAttribute('y') || 0}" width="${element.getAttribute('width') || 0}" height="${element.getAttribute('height') || 0}"`;
+                    } else if (elementType === 'circle') {
+                        attributes = ` cx="${element.getAttribute('cx') || 0}" cy="${element.getAttribute('cy') || 0}" r="${element.getAttribute('r') || 0}"`;
+                    } else if (elementType === 'ellipse') {
+                        attributes = ` cx="${element.getAttribute('cx') || 0}" cy="${element.getAttribute('cy') || 0}" rx="${element.getAttribute('rx') || 0}" ry="${element.getAttribute('ry') || 0}"`;
+                    } else if (elementType === 'polygon' || elementType === 'polyline') {
+                        attributes = ` points="${element.getAttribute('points') || ''}"`;
+                    }
+                    
+                    // Get the appropriate class for this element's color
+                    const processedColor = colorMap.get(element) || '';
+                    const className = colorToClassMap.get(processedColor) || 'cls-1';
+                    
+                    newSvg += `    <${elementType} class="${className}"${attributes} id="path${index + 1}"/>\n`;
                 });
                 
                 // Close the SVG
@@ -247,7 +299,7 @@ ${styleText}    </style>
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'reddit-ready-' + (document.getElementById('svg-input').files[0]?.name || 'output.svg');
+            a.download = 'converted-' + (document.getElementById('svg-input').files[0]?.name || 'output.svg');
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
