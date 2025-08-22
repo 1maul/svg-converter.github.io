@@ -181,7 +181,7 @@
                 let styleText = '';
                 let i = 1;
                 fillColors.forEach(color => {
-                    styleText += `      .cls-${i} {\n        fill: ${color};\n      }\n`;
+                    styleText += `      .st${i} {\n        fill: ${color};\n      }\n`;
                     i++;
                 });
                 
@@ -202,7 +202,7 @@ ${styleText}    </style>
                 const colorToClass = {};
                 i = 1;
                 fillColors.forEach(color => {
-                    colorToClass[color] = `cls-${i}`;
+                    colorToClass[color] = `st${i}`;
                     i++;
                 });
                 
@@ -211,7 +211,7 @@ ${styleText}    </style>
                     const pathData = path.getAttribute('d') || '';
                     let fill = path.getAttribute('fill') || path.style.fill || '';
                     fill = fill ? colorToHex(fill) : '';
-                    const className = fill ? colorToClass[fill] : 'cls-1';
+                    const className = fill ? colorToClass[fill] : 'st';
                     
                     newSvg += `    <path class="${className}" d="${pathData}" id="path${index + 1}"/>\n`;
                 });
