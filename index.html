@@ -60,11 +60,11 @@
     <h1>SVG Converter with Named Colors</h1>
     <div id="flex">
         <div id="controls">
-            <p>What's new!:</p>
+            <p>What's New!:</p>
             <ul>
-                <li>Added support for Android Illustrator</li>
-                <li>Works perfectly with Inkscape</li>
-               
+                <li>Adding support for Android Illustrator</li>
+                <li>Works perfectly with Inkscape </li>
+                
             </ul>
             
             <label>
@@ -72,10 +72,13 @@
                 <input type="file" id="svg-input" accept=".svg" />
             </label>
             
-            
+            <button id="convert-btn">Convert SVG</button>
             <button id="download-btn">Download Converted SVG</button>
             
-            
+            <label>
+                Converted SVG Output:
+                <textarea id="output" readonly></textarea>
+            </label>
         </div>
         
         <div>
